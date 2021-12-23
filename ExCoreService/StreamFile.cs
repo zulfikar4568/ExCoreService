@@ -20,8 +20,10 @@ namespace ExCoreService
 
         private void TimerElapsed(object sender, ElapsedEventArgs e)
         {
-            string[] lines = new string[] { DateTime.Now.ToString() };
-            File.AppendAllLines(@"C:\Temp\TestFile.txt", lines);
+            //string[] lines = new string[] { DateTime.Now.ToString() };
+            //File.AppendAllLines(@"C:\Temp\TestFile.txt", lines);
+            ProcessFiles oProcessFiles = new ProcessFiles();
+            oProcessFiles.ProcessingFile();
         }
 
         public void Start()
