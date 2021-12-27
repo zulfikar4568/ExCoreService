@@ -14,6 +14,9 @@ namespace ExCoreService
         {
             try
             {
+                NetUtil.Connect(AppSettings.SourceUNCPath, AppSettings.SourceUNCPathUsername, AppSettings.SourceUNCPathPassword);
+                NetUtil.Connect(AppSettings.CompletedUNCPath, AppSettings.CompletedUNCPathUsername, AppSettings.CompletedUNCPathPassword);
+                NetUtil.Connect(AppSettings.ErrorUNCPath, AppSettings.ErrorUNCPathUsername, AppSettings.SourceUNCPathPassword);
                 if (!Directory.Exists(AppSettings.SourceFolder)) Directory.CreateDirectory(AppSettings.SourceFolder);
                 if (!Directory.Exists(AppSettings.CompletedFolder)) Directory.CreateDirectory(AppSettings.CompletedFolder);
                 if (!Directory.Exists(AppSettings.ErrorFolder)) Directory.CreateDirectory(AppSettings.ErrorFolder);
@@ -42,12 +45,10 @@ namespace ExCoreService
                     {
                         if (bResult)
                         {
-                            //sDestinationFileName = AppSettings.CompletedFolder + "\\" + DateTime.Now.ToString("yyyy-MM-dd h:mm:ss").Replace(':','-') + " " +  System.IO.Path.GetFileName(sFileName);
                             sDestinationFileName = AppSettings.CompletedFolder + "\\" + System.IO.Path.GetFileName(sFileName);
                         }
                         else
                         {
-                            //sDestinationFileName = AppSettings.ErrorFolder + "\\" + DateTime.Now.ToString("yyyy-MM-dd h:mm:ss").Replace(':', '-') + " " + System.IO.Path.GetFileName(sFileName);
                             sDestinationFileName = AppSettings.ErrorFolder + "\\" + System.IO.Path.GetFileName(sFileName);
                         }
                         if (iFileNo > 0)
@@ -67,14 +68,13 @@ namespace ExCoreService
                                     try
                                     {
                                         oFile = new StreamWriter(sDestinationFileName + ".log");
-                                        //Exception ex = new Exception();
-                                        //EventLogUtil.LogErrorEvent("Error Filenya bro",ex);
                                         oFile.WriteLine(EventLogUtil.LastLogError);
                                     }
                                     catch { }
                                     finally
                                     {
                                         if (oFile != null) oFile.Close();
+                                        if (oFile != null) oFile.Dispose();
                                     }
                                 }
                             }

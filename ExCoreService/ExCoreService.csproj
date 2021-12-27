@@ -99,6 +99,7 @@
   <ItemGroup>
     <Compile Include="AppSettings.cs" />
     <Compile Include="EventLogUtil.cs" />
+    <Compile Include="NetUtil.cs" />
     <Compile Include="ProcessFiles.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

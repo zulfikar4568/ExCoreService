@@ -21,6 +21,109 @@ namespace ExCoreService
             }
         }
 
+        public static int TimerPollingInterval
+        {
+            get
+            {
+                return Convert.ToInt32(ConfigurationManager.AppSettings["TimerPollingInterval"]);
+            }
+        }
+
+        public static string SourceUNCPath
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["SourceUNCPath"];
+            }
+        }
+
+        public static string SourceUNCPathUsername
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["SourceUNCPathUsername"];
+            }
+        }
+
+        public static string SourceUNCPathPassword
+        {
+            get
+            {
+                if (ConfigurationManager.AppSettings["SourceUNCPathPassword"] != "")
+                {
+                    Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
+                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["SourceUNCPathPassword"]);
+                }else
+                {
+                    return "";
+                }
+            }
+        }
+
+        public static string CompletedUNCPath
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["CompletedUNCPath"];
+            }
+        }
+
+        public static string CompletedUNCPathUsername
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["CompletedUNCPathUsername"];
+            }
+        }
+
+        public static string CompletedUNCPathPassword
+        {
+            get
+            {
+                if (ConfigurationManager.AppSettings["CompletedUNCPathPassword"] != "")
+                {
+                    Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
+                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["CompletedUNCPathPassword"]);
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+
+        public static string ErrorUNCPath
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["ErrorUNCPath"];
+            }
+        }
+
+        public static string ErrorUNCPathUsername
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["ErrorUNCPathUsername"];
+            }
+        }
+
+        public static string ErrorUNCPathPassword
+        {
+            get
+            {
+                if (ConfigurationManager.AppSettings["ErrorUNCPathPassword"] != "")
+                {
+                    Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
+                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["ErrorUNCPathPassword"]);
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+
         public static string ExCoreHost
         {
             get
@@ -51,11 +154,7 @@ namespace ExCoreService
             {
 
                 Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
-                //Console.WriteLine(oSimple3Des.EncryptData(ConfigurationManager.AppSettings["ExCorePasswordReal"]));
-                //Console.WriteLine(oSimple3Des.DecryptData(ConfigurationManager.AppSettings["ExCorePassword"]));
                 return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["ExCorePassword"]);
-
-                //return ConfigurationManager.AppSettings["ExCorePasswordKey"];
             }
         }
 
