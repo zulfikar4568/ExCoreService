@@ -256,7 +256,7 @@ namespace ExCoreService
                 if (oService != null) oService.Close();
             }
         }
-        public bool SaveMfgOrder(string Name, string Description = "", string Notes = "", string ProductName = "", string ProductRevision = "", double Qty = 0, List<dynamic> MaterialList = null ,string PlannedStartDate = "", string PlannedCompletedDate = "", string ReleaseDate = "", bool AutoCreateQueue = false, bool IgnoreException = true)
+        public bool SaveMfgOrder(string Name, string Description = "", string Notes = "", string ProductName = "", string ProductRevision = "", string WorkflowName = "", string WorkflowRevision = "", double Qty = 0, List<dynamic> MaterialList = null ,string PlannedStartDate = "", string PlannedCompletedDate = "", string ReleaseDate = "", bool AutoCreateQueue = false, bool IgnoreException = true)
         {
             MfgOrderMaintService oService = null;
             try
@@ -283,12 +283,21 @@ namespace ExCoreService
                 oServiceObject.ObjectChanges = new MfgOrderChanges();
                 oServiceObject.ObjectChanges.Name = new Primitive<string>() { Value = Name };
                 if (AutoCreateQueue != false) oServiceObject.ObjectChanges.sswAutoCreateQueue = AutoCreateQueue;
-                if (ProductName != "" && ProductRevision != "")
+                if (ProductName != "" && ProductRevision != "" && ObjectExists(new ProductMaintService(AppSettings.ExCoreUserProfile), new ProductMaint(), ProductName, ProductRevision))
                 {
                     oServiceObject.ObjectChanges.Product = new RevisionedObjectRef(ProductName, ProductRevision);
-                } else if( ProductName != "")
+                } else if( ProductName != "" && ObjectExists(new ProductMaintService(AppSettings.ExCoreUserProfile), new ProductMaint(), ProductName, ""))
                 {
                     oServiceObject.ObjectChanges.Product = new RevisionedObjectRef(ProductName);
+                }
+
+                if (WorkflowName != "" && WorkflowRevision != "" && ObjectExists(new WorkflowMaintService(AppSettings.ExCoreUserProfile), new WorkflowMaint(), WorkflowName, WorkflowRevision))
+                {
+                    oServiceObject.ObjectChanges.isWorkflow= new RevisionedObjectRef(WorkflowName, WorkflowRevision);
+                }
+                else if (WorkflowName != "" && ObjectExists(new WorkflowMaintService(AppSettings.ExCoreUserProfile), new WorkflowMaint(), WorkflowName, ""))
+                {
+                    oServiceObject.ObjectChanges.isWorkflow = new RevisionedObjectRef(WorkflowName);
                 }
                 if (Qty > 0)  oServiceObject.ObjectChanges.Qty = new Primitive<double>() { Value = Qty };
                 if (Description != "") oServiceObject.ObjectChanges.Description = new Primitive<string>() { Value = Description };

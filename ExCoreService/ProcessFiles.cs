@@ -100,25 +100,29 @@ namespace ExCoreService
             bool result = false;
             string[] lineCSV = System.IO.File.ReadAllLines(FileName);
             var ProductionOrder = new List<string>();
-            var Description = new List<string>();
             var Product = new List<string>();
+            var Workflow = new List<string>();
             var Qty = new List<string>();
+            var StartTime = new List<string>();
+            var EndTime = new List<string>();
 
 
             for (int i = 1; i < lineCSV.Length; i++)
             {
                 string[] rowData = lineCSV[i].Split(',');
                 ProductionOrder.Add(rowData[0]);
-                Description.Add(rowData[1]);
-                Product.Add(rowData[2]);
-                Qty.Add(rowData[3]);
+                Product.Add(rowData[1]);
+                Workflow.Add(rowData[5]);
+                Qty.Add(rowData[6]);
+                StartTime.Add(rowData[8]);
+                EndTime.Add(rowData[9]);
 
             }
             Console.WriteLine("Production Order | Description | Product | Qty | ");
             for (int i = 0; i < lineCSV.Length - 1; i++)
             {
-                Console.WriteLine($"{i} | {ProductionOrder[i]} | {Description[i]} | {Product[i]} | {Qty[i]} |");
-                result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], Description[i], "", Product[i], "", Convert.ToDouble(Qty[i]), null, "", "", "", false);
+                Console.WriteLine($"{i} | {ProductionOrder[i]} | {Product[i]} | {Workflow[i]} | {Qty[i]} | {StartTime[i]} |{ EndTime[i]} |");
+                result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], "", "", Product[i], "", Workflow[i],"", Convert.ToDouble(Qty[i]), null, StartTime[i] , EndTime[i], "", false);
             }
             return result;
         }

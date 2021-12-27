@@ -5,7 +5,7 @@ This service Install TopShelf in  NuGetPackage, and this is using Timer that mea
 1. Copy all files in /bin/debug/ to somewhere else folder
 2. Open CMD as Administrator write for example 
 ```
-$ cd C:\Temp\Demos\ExCoreService
+$ cd C:\Temp\Released Application\ExCoreService
 $ dir
 $ ExCoreService.exe install start
 $ ExCoreService.exe uninstall
