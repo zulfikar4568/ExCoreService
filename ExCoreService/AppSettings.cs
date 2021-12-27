@@ -25,7 +25,7 @@ namespace ExCoreService
         {
             get
             {
-                return Convert.ToInt32(ConfigurationManager.AppSettings["TimerPollingInterval"]);
+                return Convert.ToInt16(ConfigurationManager.AppSettings["TimerPollingInterval"]);
             }
         }
 

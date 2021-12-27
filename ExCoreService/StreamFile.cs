@@ -14,7 +14,7 @@ namespace ExCoreService
 
         public StreamFile()
         {
-            _timer = new Timer(1000) { AutoReset = true };
+            _timer = new Timer(AppSettings.TimerPollingInterval) { AutoReset = true };
             _timer.Elapsed += TimerElapsed;
         }
 
