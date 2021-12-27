@@ -16,8 +16,14 @@ namespace ExCoreService
                 x.Service<StreamFile>(s =>
                 {
                     s.ConstructUsing(streamfile => new StreamFile());
-                    s.WhenStarted(streamfile => streamfile.Start());
-                    s.WhenStopped(streamfile => streamfile.Stop());
+                    s.WhenStarted(streamfile => {
+                        streamfile.Start();
+                        EventLogUtil.LogEvent("ExCoreService started successfully", System.Diagnostics.EventLogEntryType.Information, 3);
+                    });
+                    s.WhenStopped(streamfile => {
+                        streamfile.Stop();
+                        EventLogUtil.LogEvent("ExCoreService stopped successfully", System.Diagnostics.EventLogEntryType.Information, 3);
+                    });
                 });
                 x.RunAsLocalSystem();
                 x.SetServiceName("ExCoreService");
