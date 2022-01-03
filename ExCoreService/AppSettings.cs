@@ -11,7 +11,21 @@ namespace ExCoreService
 {
     class AppSettings
     {
-        public static TimeSpan UTCOffset 
+        public static string Resource
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["Resource"];
+            }
+        }
+        public static string Workflow
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["Workflow"];
+            }
+        }
+        public static TimeSpan UTCOffset
         {
             get
             {
@@ -53,7 +67,8 @@ namespace ExCoreService
                 {
                     Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
                     return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["SourceUNCPathPassword"]);
-                }else
+                }
+                else
                 {
                     return "";
                 }

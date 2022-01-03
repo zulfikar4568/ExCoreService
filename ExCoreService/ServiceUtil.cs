@@ -245,18 +245,181 @@ namespace ExCoreService
                 bool statusManageInventory = ProcessResult(oResulstStatus, ref sMessage, false);
                 EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 2);
                 return statusManageInventory;
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
                 EventLogUtil.LogErrorEvent(ex.Source, ex);
                 if (!IgnoreException) throw ex;
                 return false;
-            } finally
+            }
+            finally
             {
                 if (oService != null) oService.Close();
             }
         }
-        public bool SaveMfgOrder(string Name, string Description = "", string Notes = "", string ProductName = "", string ProductRevision = "", string WorkflowName = "", string WorkflowRevision = "", double Qty = 0, List<dynamic> MaterialList = null ,string PlannedStartDate = "", string PlannedCompletedDate = "", string ReleaseDate = "", bool AutoCreateQueue = false, bool IgnoreException = true)
+        public ProductChanges GetProduct(string ProductName, string ProductRevision = "", bool IgnoreException = true)
+        {
+            ProductMaintService oService = null;
+            try
+            {
+                oService = new ProductMaintService(AppSettings.ExCoreUserProfile);
+                ProductMaint oServiceObject = new ProductMaint();
+                if (ProductName != "" && ProductRevision != "")
+                {
+                    oServiceObject.ObjectToChange = new RevisionedObjectRef(ProductName, ProductRevision);
+                }
+                else if (ProductName != "")
+                {
+                    oServiceObject.ObjectToChange = new RevisionedObjectRef(ProductName);
+                }
+                ProductMaint_Request oServiceRequest = new ProductMaint_Request();
+                oServiceRequest.Info = new ProductMaint_Info();
+                oServiceRequest.Info.ObjectChanges = new ProductChanges_Info();
+                oServiceRequest.Info.ObjectChanges.RequestValue = true;
+
+                ProductMaint_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.Load(oServiceObject, oServiceRequest, out oServiceResult);
+
+                EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
+                if (oServiceResult.Value.ObjectChanges != null)
+                {
+                    return oServiceResult.Value.ObjectChanges;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public MfgOrderChanges GetMfgOrder(string MfgOrderName, bool IgnoreException = true)
+        {
+            MfgOrderMaintService oService = null;
+            try
+            {
+                oService = new MfgOrderMaintService(AppSettings.ExCoreUserProfile);
+                MfgOrderMaint oServiceObject = new MfgOrderMaint();
+                oServiceObject.ObjectToChange = new NamedObjectRef(MfgOrderName);
+
+                MfgOrderMaint_Request oServiceRequest = new MfgOrderMaint_Request();
+                oServiceRequest.Info = new MfgOrderMaint_Info();
+                oServiceRequest.Info.ObjectChanges = new MfgOrderChanges_Info();
+                oServiceRequest.Info.ObjectChanges.RequestValue = true;
+
+                MfgOrderMaint_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.Load(oServiceObject, oServiceRequest, out oServiceResult);
+
+                EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
+                string sMessage = "";
+                if (ProcessResult(oResultStatus, ref sMessage, true))
+                {
+                    return oServiceResult.Value.ObjectChanges;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public MfgOrderChanges GetMfgOrderDispatch(bool IgnoreException = true)
+        {
+            try
+            {
+                ServiceUtil oServiceUtil = new ServiceUtil();
+                NamedObjectRef[] oNameMfgList = oServiceUtil.GetListMfgOrder();
+                List<MfgOrderChanges> oMfgList = new List<MfgOrderChanges>();
+                List<MfgOrderChanges> oNewMfgList = new List<MfgOrderChanges>(oNameMfgList.Count());
+                foreach (var MfgItem in oNameMfgList)
+                {
+                    oMfgList.Add(oServiceUtil.GetMfgOrder(MfgItem.Name));
+                }
+                oMfgList.ForEach((value) =>
+                {
+                    if (value.PlannedStartDate != null && value.isWorkflow != null && value.isWorkflow.Name == AppSettings.Workflow)
+                    {
+                        oNewMfgList.Add(value);
+                    }
+                });
+                oNewMfgList = oNewMfgList.OrderBy(x => Convert.ToDateTime(x.PlannedStartDate.ToString())).ToList();
+                if (oNewMfgList.Count > 0)
+                {
+                    return oNewMfgList[0];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+        }
+        public NamedObjectRef[] GetListMfgOrder(bool IgnoreException = true)
+        {
+            MfgOrderMaintService oService = null;
+            try
+            {
+                oService = new MfgOrderMaintService(AppSettings.ExCoreUserProfile);
+                MfgOrderMaint oServiceObject = new MfgOrderMaint();
+
+                MfgOrderMaint_Request oServiceRequest = new MfgOrderMaint_Request();
+                oServiceRequest.Info = new MfgOrderMaint_Info();
+                oServiceRequest.Info.ObjectListInquiry = new Info(true);
+                oServiceRequest.Info.ObjectListInquiry.RequestValue = true;
+
+                MfgOrderMaint_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.GetEnvironment(oServiceRequest, out oServiceResult);
+
+                EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
+                string sMessage = "";
+                if (ProcessResult(oResultStatus, ref sMessage, true))
+                {
+                    return oServiceResult.Value.ObjectListInquiry;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public bool SaveMfgOrder(string Name, string Description = "", string Notes = "", string ProductName = "", string ProductRevision = "", string WorkflowName = "", string WorkflowRevision = "", double Qty = 0, List<dynamic> MaterialList = null, string PlannedStartDate = "", string PlannedCompletedDate = "", string ReleaseDate = "", string OrderStatus = "", bool AutoCreateQueue = false, bool IgnoreException = true)
         {
             MfgOrderMaintService oService = null;
             try
@@ -282,26 +445,28 @@ namespace ExCoreService
                 oServiceObject = new MfgOrderMaint();
                 oServiceObject.ObjectChanges = new MfgOrderChanges();
                 oServiceObject.ObjectChanges.Name = new Primitive<string>() { Value = Name };
+                if (OrderStatus != "") oServiceObject.ObjectChanges.OrderStatus = new NamedObjectRef(OrderStatus);
                 if (AutoCreateQueue != false) oServiceObject.ObjectChanges.sswAutoCreateQueue = AutoCreateQueue;
                 if (ProductName != "" && ProductRevision != "" && ObjectExists(new ProductMaintService(AppSettings.ExCoreUserProfile), new ProductMaint(), ProductName, ProductRevision))
                 {
                     oServiceObject.ObjectChanges.Product = new RevisionedObjectRef(ProductName, ProductRevision);
-                } else if( ProductName != "" && ObjectExists(new ProductMaintService(AppSettings.ExCoreUserProfile), new ProductMaint(), ProductName, ""))
+                }
+                else if (ProductName != "" && ObjectExists(new ProductMaintService(AppSettings.ExCoreUserProfile), new ProductMaint(), ProductName, ""))
                 {
                     oServiceObject.ObjectChanges.Product = new RevisionedObjectRef(ProductName);
                 }
 
                 if (WorkflowName != "" && WorkflowRevision != "" && ObjectExists(new WorkflowMaintService(AppSettings.ExCoreUserProfile), new WorkflowMaint(), WorkflowName, WorkflowRevision))
                 {
-                    oServiceObject.ObjectChanges.isWorkflow= new RevisionedObjectRef(WorkflowName, WorkflowRevision);
+                    oServiceObject.ObjectChanges.isWorkflow = new RevisionedObjectRef(WorkflowName, WorkflowRevision);
                 }
                 else if (WorkflowName != "" && ObjectExists(new WorkflowMaintService(AppSettings.ExCoreUserProfile), new WorkflowMaint(), WorkflowName, ""))
                 {
                     oServiceObject.ObjectChanges.isWorkflow = new RevisionedObjectRef(WorkflowName);
                 }
-                if (Qty > 0)  oServiceObject.ObjectChanges.Qty = new Primitive<double>() { Value = Qty };
+                if (Qty > 0) oServiceObject.ObjectChanges.Qty = new Primitive<double>() { Value = Qty };
                 if (Description != "") oServiceObject.ObjectChanges.Description = new Primitive<string>() { Value = Description };
-                if (Notes != "")  oServiceObject.ObjectChanges.Notes = new Primitive<string>() { Value = Notes };
+                if (Notes != "") oServiceObject.ObjectChanges.Notes = new Primitive<string>() { Value = Notes };
                 if (MaterialList != null)
                 {
                     if (MaterialList.Count > 0)
@@ -341,7 +506,8 @@ namespace ExCoreService
                 bool statusMfgOrder = ProcessResult(oService.CommitTransaction(), ref sMessage, false);
                 EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 2);
                 return statusMfgOrder;
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
                 EventLogUtil.LogErrorEvent(ex.Source, ex);
@@ -374,14 +540,16 @@ namespace ExCoreService
                 if (ProductName != "" && ProductRevision != "")
                 {
                     oServiceObject.Details.Product = new RevisionedObjectRef(ProductName, ProductRevision);
-                } else if (ProductName != "")
+                }
+                else if (ProductName != "")
                 {
                     oServiceObject.Details.Product = new RevisionedObjectRef(ProductName);
                 }
                 if (WorkflowName != "" && WorkflowRevision != "")
                 {
                     oServiceObject.CurrentStatusDetails.Workflow = new RevisionedObjectRef(WorkflowName, WorkflowRevision);
-                } else if (WorkflowName != "")
+                }
+                else if (WorkflowName != "")
                 {
                     oServiceObject.CurrentStatusDetails.Workflow = new RevisionedObjectRef(WorkflowName);
                 }
@@ -530,7 +698,7 @@ namespace ExCoreService
                 ResultStatus oResultStatus = null;
                 oService = new ComponentIssueService(AppSettings.ExCoreUserProfile);
                 EventLogUtil.LogEvent("Setting input data for ComponentIssue ...", System.Diagnostics.EventLogEntryType.Information, 2);
-                oServiceObject = new ComponentIssue() { Container = new ContainerRef(ContainerName)};
+                oServiceObject = new ComponentIssue() { Container = new ContainerRef(ContainerName) };
                 if (IssueDetailList != null)
                 {
                     if (IssueDetailList.Count > 0)
@@ -547,7 +715,7 @@ namespace ExCoreService
                 }
                 EventLogUtil.LogEvent("Execution ComponentIssue ....", System.Diagnostics.EventLogEntryType.Information, 2);
                 oResultStatus = oService.ExecuteTransaction(oServiceObject);
-                bool statusComponentIssue= ProcessResult(oResultStatus, ref sMessage, false);
+                bool statusComponentIssue = ProcessResult(oResultStatus, ref sMessage, false);
                 EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 3);
                 return statusComponentIssue;
             }
@@ -613,7 +781,7 @@ namespace ExCoreService
                 }
                 ContainerTxn_Request oServiceRequest = new ContainerTxn_Request();
                 oServiceRequest.Info = new ContainerTxn_Info();
-                oServiceRequest.Info.CurrentContainerStatus= new CurrentContainerStatus_Info();
+                oServiceRequest.Info.CurrentContainerStatus = new CurrentContainerStatus_Info();
                 oServiceRequest.Info.CurrentContainerStatus.RequestValue = true;
 
                 //Requets the Data
@@ -626,7 +794,8 @@ namespace ExCoreService
                 if (ProcessResult(oResultStatus, ref sMessage, false))
                 {
                     return oServiceResult.Value.CurrentContainerStatus;
-                } else
+                }
+                else
                 {
                     return null;
                 }
@@ -646,6 +815,125 @@ namespace ExCoreService
         #endregion
 
         #region RESOURCE TXN FUNCTION
+        public ResStatusReasonGroupChanges GetResourceStatusReasonGroup(string StatusCodeName, bool IgnoreException = true)
+        {
+            ResStatusReasonGroupMaintService oService = null;
+            try
+            {
+                oService = new ResStatusReasonGroupMaintService(AppSettings.ExCoreUserProfile);
+                ResStatusReasonGroupMaint oServiceObject = new ResStatusReasonGroupMaint();
+                oServiceObject.ObjectToChange = new NamedObjectRef(StatusCodeName);
+
+                ResStatusReasonGroupMaint_Request oServiceRequest = new ResStatusReasonGroupMaint_Request();
+                oServiceRequest.Info = new ResStatusReasonGroupMaint_Info();
+                oServiceRequest.Info.ObjectChanges = new ResStatusReasonGroupChanges_Info();
+                oServiceRequest.Info.ObjectChanges.RequestValue = true;
+
+                ResStatusReasonGroupMaint_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.Load(oServiceObject, oServiceRequest, out oServiceResult);
+
+                EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
+                string sMessage = "";
+                if (ProcessResult(oResultStatus, ref sMessage, true))
+                {
+                    return oServiceResult.Value.ObjectChanges;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public ResourceStatusCodeChanges GetResourceStatusCode(string StatusCodeName, bool IgnoreException = true)
+        {
+            ResourceStatusCodeMaintService oService = null;
+            try
+            {
+                oService = new ResourceStatusCodeMaintService(AppSettings.ExCoreUserProfile);
+                ResourceStatusCodeMaint oServiceObject = new ResourceStatusCodeMaint();
+                oServiceObject.ObjectToChange = new NamedObjectRef(StatusCodeName);
+
+                ResourceStatusCodeMaint_Request oServiceRequest = new ResourceStatusCodeMaint_Request();
+                oServiceRequest.Info = new ResourceStatusCodeMaint_Info();
+                oServiceRequest.Info.ObjectChanges = new ResourceStatusCodeChanges_Info();
+                oServiceRequest.Info.ObjectChanges.RequestValue = true;
+
+                ResourceStatusCodeMaint_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.Load(oServiceObject, oServiceRequest, out oServiceResult);
+
+                EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
+                string sMessage = "";
+                if (ProcessResult(oResultStatus, ref sMessage, true))
+                {
+                    return oServiceResult.Value.ObjectChanges;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public NamedObjectRef[] GetListResourceStatusCode(bool IgnoreException = true)
+        {
+            ResourceStatusCodeMaintService oService = null;
+            try
+            {
+                oService = new ResourceStatusCodeMaintService(AppSettings.ExCoreUserProfile);
+                ResourceStatusCodeMaint oServiceObject = new ResourceStatusCodeMaint();
+
+                ResourceStatusCodeMaint_Request oServiceRequest = new ResourceStatusCodeMaint_Request();
+                oServiceRequest.Info = new ResourceStatusCodeMaint_Info();
+                oServiceRequest.Info.ObjectListInquiry = new Info(true);
+                oServiceRequest.Info.ObjectListInquiry.RequestValue = true;
+
+                ResourceStatusCodeMaint_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.GetEnvironment(oServiceRequest, out oServiceResult);
+
+                EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
+                string sMessage = "";
+                if (ProcessResult(oResultStatus, ref sMessage, true))
+                {
+                    return oServiceResult.Value.ObjectListInquiry;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
         public ResourceStatusDetails GetResourceStatusDetails(string ResourceName, bool IgnoreException = true)
         {
             ResourceTxnService oService = null;
@@ -670,7 +958,50 @@ namespace ExCoreService
                 if (ProcessResult(oResultStatus, ref sMessage, true))
                 {
                     return oServiceResult.Value.ResourceStatusDetails;
-                } else
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public GetMaintenanceStatusDetails[] GetGetMaintenanceStatus(string ResourceName, bool IgnoreException = true)
+        {
+            GetMaintenanceStatusesService oService = null;
+            try
+            {
+                oService = new GetMaintenanceStatusesService(AppSettings.ExCoreUserProfile);
+
+                //Set Input Data
+                GetMaintenanceStatuses oServiceObject = new GetMaintenanceStatuses();
+                oServiceObject.Resource = new NamedObjectRef(ResourceName);
+                GetMaintenanceStatuses_Request oServiceRequest = new GetMaintenanceStatuses_Request();
+                oServiceRequest.Info = new GetMaintenanceStatuses_Info();
+                oServiceRequest.Info.StatusDetails = new GetMaintenanceStatusDetails_Info();
+                oServiceRequest.Info.StatusDetails.RequestValue = true;
+
+                //Request the Data
+                GetMaintenanceStatuses_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.GetEnvironment(oServiceObject, oServiceRequest, out oServiceResult);
+
+                //Return the Result
+                string sMessage = "";
+                if (ProcessResult(oResultStatus, ref sMessage, true))
+                {
+                    return oServiceResult.Value.StatusDetails;
+                }
+                else
                 {
                     return null;
                 }
@@ -698,7 +1029,7 @@ namespace ExCoreService
                 oService = new ResourceSetupService(AppSettings.ExCoreUserProfile);
 
                 //Set Input Data
-                EventLogUtil.LogEvent("Setting input data for ResourceSetup", System.Diagnostics.EventLogEntryType.Information , 3);
+                EventLogUtil.LogEvent("Setting input data for ResourceSetup", System.Diagnostics.EventLogEntryType.Information, 3);
                 oServiceObject = new ResourceSetup() { Resource = new NamedObjectRef(ResourceName), ResourceStatusCode = new NamedObjectRef(Status), ResourceStatusReason = new NamedObjectRef(Reason) };
                 if (Comments != "") oServiceObject.Comments = Comments;
                 if (EmployeeName != "") oServiceObject.Employee = new NamedObjectRef(EmployeeName);
@@ -712,7 +1043,8 @@ namespace ExCoreService
                 bool statusResourceSetup = ProcessResult(oResultStatus, ref sMessage, false);
                 EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 3);
                 return statusResourceSetup;
-            } catch  (Exception ex)
+            }
+            catch (Exception ex)
             {
                 ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
                 EventLogUtil.LogErrorEvent(ex.Source, ex);
@@ -798,7 +1130,7 @@ namespace ExCoreService
                         var oEmployeeList = oServiceObject.Employees;
                         Array.Resize(ref oEmployeeList, EmployeeList.Count);
                         oServiceObject.Employees = oEmployeeList;
-                        for(int index = 0; index < EmployeeList.Count; index++)
+                        for (int index = 0; index < EmployeeList.Count; index++)
                         {
                             Console.WriteLine(EmployeeList[index].Name);
                             oServiceObject.Employees[index] = EmployeeList[index];

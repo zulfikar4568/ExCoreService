@@ -23,9 +23,9 @@ namespace ExCoreService
         {
             EventLogUtil.EventLogRef = new EventLog();
 
-            foreach(EventLog oEventLog in EventLog.GetEventLogs())
+            foreach (EventLog oEventLog in EventLog.GetEventLogs())
             {
-                if(sEventLog.Substring(0,8).ToUpper() == oEventLog.Log.Substring(0, 8).ToUpper())
+                if (sEventLog.Substring(0, 3).ToUpper() == oEventLog.Log.Substring(0, 3).ToUpper())
                 {
                     sEventLog = oEventLog.Log;
                     break;
@@ -49,7 +49,7 @@ namespace ExCoreService
         }
         public static void LogErrorEvent(string Location, Exception Ex, int _Event_Id = 0)
         {
-            if(EventLogUtil.EventLogRef is null) InitEventLog();
+            if (EventLogUtil.EventLogRef is null) InitEventLog();
             EventLogUtil.EventLogRef.Source = sEventSource;
             EventLogUtil.EventLogRef.Log = sEventLog;
             LastLogError = "Error Location: " + Location + "\r\n" + "Error Source: " + Ex.Source + "\r\n" + "Error Message: " + Ex.Message;
