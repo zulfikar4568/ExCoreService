@@ -357,7 +357,7 @@ namespace ExCoreService
                 }
                 oMfgList.ForEach((value) =>
                 {
-                    if (value.PlannedStartDate != null && value.isWorkflow != null && value.isWorkflow.Name == AppSettings.Workflow)
+                    if (value.PlannedStartDate != null && value.isWorkflow != null && value.isWorkflow.Name == AppSettings.Workflow && value.OrderStatus.Name == "Released")
                     {
                         oNewMfgList.Add(value);
                     }
