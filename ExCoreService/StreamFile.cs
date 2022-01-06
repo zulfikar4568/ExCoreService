@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -20,8 +21,20 @@ namespace ExCoreService
 
         private void TimerElapsed(object sender, ElapsedEventArgs e)
         {
-            ProcessFiles oProcessFiles = new ProcessFiles();
-            oProcessFiles.ProcessingFile();
+            try
+            {
+                _timer.Stop();
+                ProcessFiles oProcessFiles = new ProcessFiles();
+                oProcessFiles.ProcessingFile();
+            }catch(Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+            }
+            finally
+            {
+                _timer.Start();
+            }
         }
 
         public void Start()

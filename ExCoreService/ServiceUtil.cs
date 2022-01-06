@@ -473,14 +473,11 @@ namespace ExCoreService
                     {
                         oServiceObject.ObjectChanges.ReplaceDetails = true;
                         oServiceObject.ObjectChanges.ReplaceDetailsSubentityListNames = "MaterialList";
-                        //MaterialList.ForEach(i => Console.Write("{0}\t", i));
                         var oMaterialList = oServiceObject.ObjectChanges.MaterialList;
                         Array.Resize(ref oMaterialList, MaterialList.Count);
-                        Console.WriteLine(oMaterialList.Length);
                         oServiceObject.ObjectChanges.MaterialList = oMaterialList;
                         for (int index = 0; index < MaterialList.Count; index++)
                         {
-                            Console.WriteLine(MaterialList[index].Product.Name);
                             oServiceObject.ObjectChanges.MaterialList[index] = MaterialList[index];
                         }
                     }
