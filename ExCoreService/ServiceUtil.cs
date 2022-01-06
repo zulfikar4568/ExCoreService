@@ -522,6 +522,38 @@ namespace ExCoreService
         #endregion
 
         #region CONTAINER TXN FUNCTION
+        public bool ExecuteRework(string ContainerName, string ReworkReason, string Path = "", string Resource = "", bool IgnoreException = true)
+        {
+            ReworkService oService = null;
+            try
+            {
+                oService = new ReworkService(AppSettings.ExCoreUserProfile);
+                EventLogUtil.LogEvent("Setting input data for Rework Txn", System.Diagnostics.EventLogEntryType.Information, 3);
+                Rework oServiceObject = new Rework();
+                oServiceObject.Container = new ContainerRef(ContainerName);
+                oServiceObject.ReworkReason = new NamedObjectRef(ReworkReason);
+                if (Path != "") oServiceObject.Path = new NamedSubentityRef(Path);
+                if (Resource != "") oServiceObject.Resource = new NamedObjectRef(Resource);
+                EventLogUtil.LogEvent("Execute Rework Txn", System.Diagnostics.EventLogEntryType.Information, 3);
+                ResultStatus oResultStatus = null;
+                string sMessage = "";
+                oResultStatus = oService.ExecuteTransaction(oServiceObject);
+                bool statusMoveIn = ProcessResult(oResultStatus, ref sMessage, false);
+                EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 2);
+                return statusMoveIn;
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return false;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
         public bool ExecuteStart(string ContainerName, string MfgOrder = "", string ProductName = "", string ProductRevision = "", string WorkflowName = "", string WorkflowRevision = "", string Level = "", string Owner = "", string StartReason = "", string PriorityCode = "", double Qty = 0, string UOM = "", string Comments = "", string EmployeeName = "", string TxnDateStr = "", bool IgnoreException = true)
         {
             StartService oService = null;
