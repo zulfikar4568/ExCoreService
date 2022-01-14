@@ -121,24 +121,47 @@ namespace ExCoreService
             }
             foreach (var oMfgOrder in oMfgOrders)
             {
-                if (oMfgOrder != null && oMfgOrder.Qty.Value != 0)
+                ERPRouteChanges oERPRoute = oServiceUtil.GetERPRouteFromMfgOrder(oMfgOrder);
+                if (oMfgOrder != null && oERPRoute != null)
                 {
-                    List<dynamic> cMaterialList = new List<dynamic>();
-                    for (int j = 0; j < lineCSV.Length - 1; j++)
+                    if (oMfgOrder.Qty.Value != 0)
                     {
-                        if (oMfgOrder.Name.ToString() == ProductionOrder[j])
+                        List<dynamic> cMaterialList = new List<dynamic>();
+                        for (int j = 0; j < lineCSV.Length - 1; j++)
                         {
-                            ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
-                            bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), PartRequired[j], "");
-                            if (ObjectExists)
+                            if (oMfgOrder.Name.ToString() == ProductionOrder[j])
                             {
-                                cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.LotAndStockPoint });
+                                ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
+                                bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), PartRequired[j], "");
+                                if (ObjectExists)
+                                {
+                                    if (oERPRoute.Name.Value == AppSettings.ERPRouteMinime)
+                                    {
+                                        cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(AppSettings.RouteStepMinime) });
+
+                                    }
+                                    else if (oERPRoute.Name.Value == AppSettings.ERPRouteAriel)
+                                    {
+                                        cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(AppSettings.RouteStepAriel) });
+                                    }
+                                    else if (oERPRoute.Name.Value == AppSettings.HeadAssy)
+                                    {
+                                        cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(AppSettings.RouteHeadAssy) });
+                                    }
+                                }
+                                Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber[j]} | {PartRequired[j]} | {Qty[j]}");
                             }
-                            Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber[j]} | {PartRequired[j]} | {Qty[j]}");
                         }
+                        if (cMaterialList.Count > 0)
+                        //{
+                            //var newIssueDetails = cMaterialList.GroupBy(x => x.Product.Name).Select(x => x.First()).ToList();
+                            //result = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, newIssueDetails, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
+                        //} else
+                        //{
+                            result = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, cMaterialList, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
+                        //}
+                        if (!result) break;
                     }
-                    result = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, cMaterialList);
-                    if (!result) break;
                 }
             }
             return result;
@@ -171,7 +194,7 @@ namespace ExCoreService
             for (int i = 0; i < lineCSV.Length - 1; i++)
             {
                 Console.WriteLine($"{i} | {ProductionOrder[i]} | {Product[i]} | {Workflow[i]} | {Qty[i]} | {StartTime[i]} |{ EndTime[i]} |");
-                result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], "", "", Product[i], "", Workflow[i],"", Convert.ToDouble(Qty[i]), null, StartTime[i] , EndTime[i], "", "Released", true);
+                result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], "", "", Product[i], "", Workflow[i],"", Convert.ToDouble(Qty[i]), null,"", StartTime[i] , EndTime[i], "", "Released", true);
                 if (!result) break;
             }
             return result;

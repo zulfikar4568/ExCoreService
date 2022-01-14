@@ -11,6 +11,48 @@ namespace ExCoreService
 {
     class AppSettings
     {
+        public static string HeadAssy
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["HeadAssy"];
+            }
+        }
+        public static string RouteHeadAssy
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["RouteHeadAssy"];
+            }
+        }
+        public static string RouteStepAriel
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["RouteStepAriel"];
+            }
+        }
+        public static string ERPRouteAriel
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["ERPRouteAriel"];
+            }
+        }
+        public static string RouteStepMinime
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["RouteStepMinime"];
+            }
+        }
+        public static string ERPRouteMinime
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["ERPRouteMinime"];
+            }
+        }
         public static string Resource
         {
             get

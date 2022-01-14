@@ -276,10 +276,171 @@ namespace ExCoreService
                 ProductMaint_Request oServiceRequest = new ProductMaint_Request();
                 oServiceRequest.Info = new ProductMaint_Info();
                 oServiceRequest.Info.ObjectChanges = new ProductChanges_Info();
-                oServiceRequest.Info.ObjectChanges.RequestValue = true;
+                oServiceRequest.Info.ObjectChanges.ProductType = new Info(true);
+                oServiceRequest.Info.ObjectChanges.Workflow = new Info(true);
+                oServiceRequest.Info.ObjectChanges.Name = new Info(true);
+                oServiceRequest.Info.ObjectChanges.Description = new Info(true);
+                oServiceRequest.Info.ObjectChanges.ERPBOM = new Info(true);
+                oServiceRequest.Info.ObjectChanges.BOM = new Info(true);
+                oServiceRequest.Info.ObjectChanges.ERPBOM = new Info(true);
+                oServiceRequest.Info.ObjectChanges.StdStartQty = new Info(true);
+                oServiceRequest.Info.ObjectChanges.UOM = new Info(true);
+                oServiceRequest.Info.ObjectChanges.sswStartOwner = new Info(true);
+                oServiceRequest.Info.ObjectChanges.sswStartReason = new Info(true);
+                oServiceRequest.Info.ObjectChanges.sswStartLevel = new Info(true);
 
                 ProductMaint_Result oServiceResult = null;
                 ResultStatus oResultStatus = oService.Load(oServiceObject, oServiceRequest, out oServiceResult);
+
+                EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
+                if (oServiceResult.Value.ObjectChanges != null)
+                {
+                    return oServiceResult.Value.ObjectChanges;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public WorkflowChanges GetWorkflow(string WorkflowName, string WorkflowRevision = "", bool IgnoreException = true)
+        {
+            WorkflowMaintService oService = null;
+            try
+            {
+                oService = new WorkflowMaintService(AppSettings.ExCoreUserProfile);
+                WorkflowMaint oServiceObject = new WorkflowMaint();
+                if (WorkflowName != "" && WorkflowRevision != "")
+                {
+                    oServiceObject.ObjectToChange = new RevisionedObjectRef(WorkflowName, WorkflowRevision);
+                }
+                else if (WorkflowName != "")
+                {
+                    oServiceObject.ObjectToChange = new RevisionedObjectRef(WorkflowName);
+                }
+                WorkflowMaint_Request oServiceRequest = new WorkflowMaint_Request();
+                oServiceRequest.Info = new WorkflowMaint_Info();
+                oServiceRequest.Info.ObjectChanges = new WorkflowChanges_Info();
+                oServiceRequest.Info.ObjectChanges.Name = new Info(true);
+                oServiceRequest.Info.ObjectChanges.Description = new Info(true);
+                oServiceRequest.Info.ObjectChanges.ERPRoute = new Info(true);
+                StepChanges_Info stepChanges_Info = new StepChanges_Info();
+                stepChanges_Info.Name = new Info(true);
+                stepChanges_Info.RouteStep = new Info(true);
+                oServiceRequest.Info.ObjectChanges.Steps = stepChanges_Info;
+                oServiceRequest.Info.ObjectChanges.Status = new Info(true);
+
+                WorkflowMaint_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.Load(oServiceObject, oServiceRequest, out oServiceResult);
+
+                EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
+                if (oServiceResult.Value.ObjectChanges != null)
+                {
+                    return oServiceResult.Value.ObjectChanges;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public ERPRouteChanges GetERPRouteFromMfgOrder(MfgOrderChanges oMfgOrder, bool IgnoreException = true)
+        {
+            try
+            {
+                if (oMfgOrder != null)
+                {
+                    if (oMfgOrder.Product != null)
+                    {
+                        ProductChanges oProduct = GetProduct(oMfgOrder.Product.Name);
+                        if (oProduct.Workflow != null)
+                        {
+                            WorkflowChanges oWorkflow = GetWorkflow(oProduct.Workflow.Name);
+                            if (oWorkflow.ERPRoute != null)
+                            {
+                                ERPRouteChanges oERPRoute = GetERPRoute(oWorkflow.ERPRoute.Name);
+                                return oERPRoute;
+                            }
+                            else
+                            {
+                                return null;
+                            }
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                } else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+        }
+        public ERPRouteChanges GetERPRoute(string ERPRouteName, string ERPRouteRevision = "", bool IgnoreException = true)
+        {
+            ERPRouteMaintService oService = null;
+            try
+            {
+                oService = new ERPRouteMaintService(AppSettings.ExCoreUserProfile);
+                ERPRouteMaint oServiceObject = new ERPRouteMaint();
+                if (ERPRouteName != "" && ERPRouteRevision != "")
+                {
+                    oServiceObject.ObjectToChange = new RevisionedObjectRef(ERPRouteName, ERPRouteRevision);
+                }
+                else if (ERPRouteName != "")
+                {
+                    oServiceObject.ObjectToChange = new RevisionedObjectRef(ERPRouteName);
+                }
+
+                ERPRouteMaint_Request oServiceRequest = new ERPRouteMaint_Request();
+                oServiceRequest.Info = new ERPRouteMaint_Info();
+                oServiceRequest.Info.ObjectChanges = new ERPRouteChanges_Info();
+                oServiceRequest.Info.ObjectChanges.Name = new Info(true);
+                oServiceRequest.Info.ObjectChanges.Description = new Info(true);
+                oServiceRequest.Info.ObjectChanges.RouteStepItem = new Info(true);
+                RouteStepChanges_Info routeStepChanges_Info = new RouteStepChanges_Info();
+                routeStepChanges_Info.Name = new Info(true);
+                routeStepChanges_Info.ERPOperation = new Info(true);
+                oServiceRequest.Info.ObjectChanges.RouteSteps = routeStepChanges_Info;
+                oServiceRequest.Info.ObjectChanges.Status = new Info(true);
+
+                ERPRouteMaint_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.Load(oServiceObject ,oServiceRequest, out oServiceResult);
 
                 EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
                 if (oServiceResult.Value.ObjectChanges != null)
@@ -419,7 +580,7 @@ namespace ExCoreService
                 if (!(oService is null)) oService.Close();
             }
         }
-        public bool SaveMfgOrder(string Name, string Description = "", string Notes = "", string ProductName = "", string ProductRevision = "", string WorkflowName = "", string WorkflowRevision = "", double Qty = 0, List<dynamic> MaterialList = null, string PlannedStartDate = "", string PlannedCompletedDate = "", string ReleaseDate = "", string OrderStatus = "", bool AutoCreateQueue = false, bool IgnoreException = true)
+        public bool SaveMfgOrder(string Name, string Description = "", string Notes = "", string ProductName = "", string ProductRevision = "", string WorkflowName = "", string WorkflowRevision = "", double Qty = 0, List<dynamic> MaterialList = null, string ERPRoute = "", string PlannedStartDate = "", string PlannedCompletedDate = "", string ReleaseDate = "", string OrderStatus = "", bool AutoCreateQueue = false, bool IgnoreException = true)
         {
             MfgOrderMaintService oService = null;
             try
@@ -445,6 +606,7 @@ namespace ExCoreService
                 oServiceObject = new MfgOrderMaint();
                 oServiceObject.ObjectChanges = new MfgOrderChanges();
                 oServiceObject.ObjectChanges.Name = new Primitive<string>() { Value = Name };
+                if (ERPRoute != "") oServiceObject.ObjectChanges.ERPRoute = new RevisionedObjectRef(ERPRoute);
                 if (OrderStatus != "") oServiceObject.ObjectChanges.OrderStatus = new NamedObjectRef(OrderStatus);
                 if (AutoCreateQueue != false) oServiceObject.ObjectChanges.sswAutoCreateQueue = AutoCreateQueue;
                 if (ProductName != "" && ProductRevision != "" && ObjectExists(new ProductMaintService(AppSettings.ExCoreUserProfile), new ProductMaint(), ProductName, ProductRevision))
@@ -503,6 +665,89 @@ namespace ExCoreService
                 bool statusMfgOrder = ProcessResult(oService.CommitTransaction(), ref sMessage, false);
                 EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 2);
                 return statusMfgOrder;
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return false;
+            }
+            finally
+            {
+                if (oService != null) oService.Close();
+            }
+        }
+        public bool SaveProduct(string ProductName, string Revision, string IsRevOfRcd = "", string Description = "", string Notes ="", string ProductType = "", string DocumentSet = "", string WorkflowName = "", string WorkflowRevision = "", string BOMName = "", string BOMRevision = "", bool IgnoreException = true)
+        {
+            ProductMaintService oService = null;
+            try
+            {
+                ProductMaint oServiceObject = null;
+                // CheckObject Exists
+                oService = new ProductMaintService(AppSettings.ExCoreUserProfile);
+                EventLogUtil.LogEvent($"Checking Product {ProductName} : {Revision}", System.Diagnostics.EventLogEntryType.Information, 3);
+                bool bBaseExists = ObjectExists(oService, new ProductMaint(), ProductName, "");
+                bool bObjectExists = ObjectExists(oService, new ProductMaint(), ProductName, Revision);
+                // Prepare Object
+                EventLogUtil.LogEvent($"Preparing Product {ProductName} : {Revision}", System.Diagnostics.EventLogEntryType.Information, 3);
+                oServiceObject = new ProductMaint();
+                if (bObjectExists)
+                {
+                    oServiceObject.ObjectToChange = new RevisionedObjectRef(ProductName, Revision);
+                    oService.BeginTransaction();
+                    oService.Load(oServiceObject);
+                } else if (bBaseExists)
+                {
+                    oService.BeginTransaction();
+                    oServiceObject.BaseToChange = new RevisionedObjectRef();
+                    oServiceObject.BaseToChange.Name = ProductName;
+                    oService.NewRev(oServiceObject);
+                }
+                // PrepareInput Data
+                oServiceObject = new ProductMaint();
+                oServiceObject.ObjectChanges = new ProductChanges();
+                oServiceObject.ObjectChanges.Name = new Primitive<string>() { Value = ProductName};
+                oServiceObject.ObjectChanges.Revision = new Primitive<string>() { Value = Revision };
+                if (IsRevOfRcd != "") oServiceObject.ObjectChanges.IsRevOfRcd = new Primitive<bool>() { Value = Convert.ToBoolean(IsRevOfRcd) };
+                if (Description != "") oServiceObject.ObjectChanges.Description = new Primitive<string>() { Value = Description };
+                if (Notes != "") oServiceObject.ObjectChanges.Notes = new Primitive<string>() { Value = Notes };
+                if (ProductType != "") oServiceObject.ObjectChanges.ProductType = new NamedObjectRef(ProductType);
+                if (DocumentSet != "") oServiceObject.ObjectChanges.DocumentSet = new NamedObjectRef(DocumentSet);
+                if (WorkflowName != "" && WorkflowRevision == "")
+                {
+                    oServiceObject.ObjectChanges.Workflow = new RevisionedObjectRef(WorkflowName);
+                } else if (WorkflowName != "" && WorkflowRevision != "")
+                {
+                    oServiceObject.ObjectChanges.Workflow = new RevisionedObjectRef(WorkflowName, WorkflowRevision);
+                }
+                if (BOMName != "" && BOMRevision == "")
+                {
+                    oServiceObject.ObjectChanges.BOM = new RevisionedObjectRef(BOMName);
+                } else if (BOMName != "" && BOMRevision != "")
+                {
+                    oServiceObject.ObjectChanges.BOM = new RevisionedObjectRef(BOMName, BOMRevision);
+                }
+                // Save the Data
+                if (bObjectExists)
+                {
+                    EventLogUtil.LogEvent($"Updating Product {ProductName} : {Revision}", System.Diagnostics.EventLogEntryType.Information, 3);
+                    oService.ExecuteTransaction(oServiceObject);
+                } else if (bBaseExists)
+                {
+                    EventLogUtil.LogEvent($"Creating Product {ProductName} : {Revision}", System.Diagnostics.EventLogEntryType.Information, 3);
+                    oService.ExecuteTransaction(oServiceObject);
+                } else
+                {
+                    EventLogUtil.LogEvent($"Creating Product {ProductName} : {Revision}", System.Diagnostics.EventLogEntryType.Information, 3);
+                    oService.BeginTransaction();
+                    oService.New(oServiceObject);
+                    oService.ExecuteTransaction();
+                }
+                string sMessage = "";
+                bool statusProduct = ProcessResult(oService.CommitTransaction(), ref sMessage, false);
+                EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 2);
+                return statusProduct;
             }
             catch (Exception ex)
             {
