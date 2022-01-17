@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
 using System.IO;
+using Camstar.WCF.ObjectStack;
+using Camstar.WCF.Services;
 
 namespace ExCoreService
 {
@@ -24,17 +26,19 @@ namespace ExCoreService
             {
                 EventLogUtil.LogErrorEvent(typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
-        }
-
-        public void ProcessingFile()
+        } 
+        public void ProcessingFile(string serviceMode)
         {
             try
             {
                 // Retrieve file from Source Folder
                 foreach (string sFileName in Directory.GetFiles(AppSettings.SourceFolder, "*.csv"))
                 {
+                    bool bResult = false;
                     EventLogUtil.LogEvent("Processing" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
-                    bool bResult = ProcessingFileMfgOrder(sFileName);
+                    if (serviceMode == "MfgOrder") bResult = ProcessingFileMfgOrder(sFileName);
+                    if (serviceMode == "OrderBOM") bResult = ProcessingFileOrderBOM(sFileName);
+                    if (serviceMode == "MasterProduct") bResult = ProcessingFileMasterProduct(sFileName);
                     EventLogUtil.LogEvent("Completed" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
 
                     // Move the file to either the completed or error depending on result
@@ -93,7 +97,102 @@ namespace ExCoreService
                 EventLogUtil.LogErrorEvent(typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
+        public bool ProcessingFileMasterProduct(string FileName)
+        {
+            ServiceUtil oServiceUtil = new ServiceUtil();
+            bool result = false;
+            string[] lineCSV = System.IO.File.ReadAllLines(FileName);
+            var ProductNumber = new List<string>();
+            var Description = new List<string>();
+            var ProductType = new List<string>();
+            List<ProductChanges> oMfgOrders = new List<ProductChanges>();
 
+            for(int i = 1; i < lineCSV.Length; i++)
+            {
+                string[] rowData = lineCSV[i].Split(',');
+                ProductNumber.Add(rowData[0]);
+                Description.Add(rowData[1]);
+                ProductType.Add(rowData[2]);
+            }
+
+            for (int j = 0; j < lineCSV.Length - 1; j++)
+            {
+                Console.WriteLine($"{j} | {ProductNumber[j]} | {Description[j]} |");
+                //result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], "", "", Product[i], "", Workflow[i], "", Convert.ToDouble(Qty[i]), null, "", StartTime[i], EndTime[i], "", "Released", true);
+                result = oServiceUtil.SaveProduct(ProductNumber[j], "1", "", Description[j], "", ProductType[j]);
+                if (!result) break;
+            }
+            return result;
+        }
+        public bool ProcessingFileOrderBOM(string FileName)
+        {
+            ServiceUtil oServiceUtil = new ServiceUtil();
+            bool result = false;
+            string[] lineCSV = System.IO.File.ReadAllLines(FileName);
+            var ProductionOrder = new List<string>();
+            var OperationNumber = new List<string>();
+            var PartRequired = new List<string>();
+            var Qty = new List<string>();
+            List<MfgOrderChanges> oMfgOrders = new List<MfgOrderChanges>();
+
+            for (int i = 1; i < lineCSV.Length; i++)
+            {
+                string[] rowData = lineCSV[i].Split(',');
+                ProductionOrder.Add(rowData[0]);
+                OperationNumber.Add(rowData[1]);
+                PartRequired.Add(rowData[2]);
+                Qty.Add(rowData[3]);
+
+            }
+            var UniqueMfgOrder = ProductionOrder.Distinct().ToList();
+            for (int i = 0; i < UniqueMfgOrder.Count; i++)
+            {
+                oMfgOrders.Add(oServiceUtil.GetMfgOrder(UniqueMfgOrder[i]));
+            }
+            foreach (var oMfgOrder in oMfgOrders)
+            {
+                ERPRouteChanges oERPRoute = oServiceUtil.GetERPRouteFromMfgOrder(oMfgOrder);
+                if (oMfgOrder != null && oERPRoute != null)
+                {
+                    if (oMfgOrder.Qty.Value != 0)
+                    {
+                        List<dynamic> cMaterialList = new List<dynamic>();
+                        for (int j = 0; j < lineCSV.Length - 1; j++)
+                        {
+                            if (oMfgOrder.Name.ToString() == ProductionOrder[j])
+                            {
+                                ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
+                                bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), PartRequired[j], "");
+                                if (ObjectExists)
+                                {
+                                    if (oERPRoute.RouteSteps.Length > 0)
+                                    {
+                                        foreach (var routeStep in oERPRoute.RouteSteps)
+                                        {
+                                            if (routeStep.Sequence.Value == OperationNumber[j] && routeStep.Name != null)
+                                            {
+                                                cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value) });
+                                            }
+                                        }
+                                    }
+                                }
+                                Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber[j]} | {PartRequired[j]} | {Qty[j]}");
+                            }
+                        }
+                        if (cMaterialList.Count > 0)
+                        //{
+                            //var newIssueDetails = cMaterialList.GroupBy(x => x.Product.Name).Select(x => x.First()).ToList();
+                            //result = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, newIssueDetails, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
+                        //} else
+                        //{
+                            result = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, cMaterialList, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
+                        //}
+                        if (!result) break;
+                    }
+                }
+            }
+            return result;
+        }
         public bool ProcessingFileMfgOrder(string FileName)
         {
             ServiceUtil oServiceUtil = new ServiceUtil();
@@ -122,7 +221,8 @@ namespace ExCoreService
             for (int i = 0; i < lineCSV.Length - 1; i++)
             {
                 Console.WriteLine($"{i} | {ProductionOrder[i]} | {Product[i]} | {Workflow[i]} | {Qty[i]} | {StartTime[i]} |{ EndTime[i]} |");
-                result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], "", "", Product[i], "", Workflow[i],"", Convert.ToDouble(Qty[i]), null, StartTime[i] , EndTime[i], "", "Released", true);
+                result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], "", "", Product[i], "", Workflow[i],"", Convert.ToDouble(Qty[i]), null,"", StartTime[i] , EndTime[i], "", "Released", true);
+                if (!result) break;
             }
             return result;
         }

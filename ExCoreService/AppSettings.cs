@@ -11,11 +11,11 @@ namespace ExCoreService
 {
     class AppSettings
     {
-        public static string Resource
+        public static string ServicesMode
         {
             get
             {
-                return ConfigurationManager.AppSettings["Resource"];
+                return ConfigurationManager.AppSettings["ServicesMode"];
             }
         }
         public static string Workflow
