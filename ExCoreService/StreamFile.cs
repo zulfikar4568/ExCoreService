@@ -25,7 +25,7 @@ namespace ExCoreService
             {
                 _timer.Stop();
                 ProcessFiles oProcessFiles = new ProcessFiles();
-                oProcessFiles.ProcessingFile();
+                oProcessFiles.ProcessingFile(AppSettings.ServicesMode);
             }catch(Exception ex)
             {
                 ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;

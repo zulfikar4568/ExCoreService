@@ -27,15 +27,18 @@ namespace ExCoreService
                 EventLogUtil.LogErrorEvent(typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         } 
-        public void ProcessingFile()
+        public void ProcessingFile(string serviceMode)
         {
             try
             {
                 // Retrieve file from Source Folder
                 foreach (string sFileName in Directory.GetFiles(AppSettings.SourceFolder, "*.csv"))
                 {
+                    bool bResult = false;
                     EventLogUtil.LogEvent("Processing" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
-                    bool bResult = ProcessingFileOrderBOM(sFileName);
+                    if (serviceMode == "MfgOrder") bResult = ProcessingFileMfgOrder(sFileName);
+                    if (serviceMode == "OrderBOM") bResult = ProcessingFileOrderBOM(sFileName);
+                    if (serviceMode == "MasterProduct") bResult = ProcessingFileMasterProduct(sFileName);
                     EventLogUtil.LogEvent("Completed" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
 
                     // Move the file to either the completed or error depending on result
