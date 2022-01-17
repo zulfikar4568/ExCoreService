@@ -436,6 +436,7 @@ namespace ExCoreService
                 RouteStepChanges_Info routeStepChanges_Info = new RouteStepChanges_Info();
                 routeStepChanges_Info.Name = new Info(true);
                 routeStepChanges_Info.ERPOperation = new Info(true);
+                routeStepChanges_Info.Sequence = new Info(true);
                 oServiceRequest.Info.ObjectChanges.RouteSteps = routeStepChanges_Info;
                 oServiceRequest.Info.ObjectChanges.Status = new Info(true);
 

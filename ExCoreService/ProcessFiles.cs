@@ -94,6 +94,33 @@ namespace ExCoreService
                 EventLogUtil.LogErrorEvent(typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
+        public bool ProcessingFileMasterProduct(string FileName)
+        {
+            ServiceUtil oServiceUtil = new ServiceUtil();
+            bool result = false;
+            string[] lineCSV = System.IO.File.ReadAllLines(FileName);
+            var ProductNumber = new List<string>();
+            var Description = new List<string>();
+            var ProductType = new List<string>();
+            List<ProductChanges> oMfgOrders = new List<ProductChanges>();
+
+            for(int i = 1; i < lineCSV.Length; i++)
+            {
+                string[] rowData = lineCSV[i].Split(',');
+                ProductNumber.Add(rowData[0]);
+                Description.Add(rowData[1]);
+                ProductType.Add(rowData[2]);
+            }
+
+            for (int j = 0; j < lineCSV.Length - 1; j++)
+            {
+                Console.WriteLine($"{j} | {ProductNumber[j]} | {Description[j]} |");
+                //result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], "", "", Product[i], "", Workflow[i], "", Convert.ToDouble(Qty[i]), null, "", StartTime[i], EndTime[i], "", "Released", true);
+                result = oServiceUtil.SaveProduct(ProductNumber[j], "1", "", Description[j], "", ProductType[j]);
+                if (!result) break;
+            }
+            return result;
+        }
         public bool ProcessingFileOrderBOM(string FileName)
         {
             ServiceUtil oServiceUtil = new ServiceUtil();
@@ -135,18 +162,15 @@ namespace ExCoreService
                                 bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), PartRequired[j], "");
                                 if (ObjectExists)
                                 {
-                                    if (oERPRoute.Name.Value == AppSettings.ERPRouteMinime)
+                                    if (oERPRoute.RouteSteps.Length > 0)
                                     {
-                                        cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(AppSettings.RouteStepMinime) });
-
-                                    }
-                                    else if (oERPRoute.Name.Value == AppSettings.ERPRouteAriel)
-                                    {
-                                        cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(AppSettings.RouteStepAriel) });
-                                    }
-                                    else if (oERPRoute.Name.Value == AppSettings.HeadAssy)
-                                    {
-                                        cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(AppSettings.RouteHeadAssy) });
+                                        foreach (var routeStep in oERPRoute.RouteSteps)
+                                        {
+                                            if (routeStep.Sequence.Value == OperationNumber[j] && routeStep.Name != null)
+                                            {
+                                                cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value) });
+                                            }
+                                        }
                                     }
                                 }
                                 Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber[j]} | {PartRequired[j]} | {Qty[j]}");
