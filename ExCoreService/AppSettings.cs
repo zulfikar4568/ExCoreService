@@ -11,6 +11,20 @@ namespace ExCoreService
 {
     class AppSettings
     {
+        public static string DefaultUOM
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["DefaultUOM"];
+            }
+        }
+        public static string DefaultInventoryLocation
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["DefaultInventoryLocation"];
+            }
+        }
         public static string ServicesMode
         {
             get

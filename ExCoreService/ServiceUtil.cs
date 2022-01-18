@@ -353,16 +353,19 @@ namespace ExCoreService
                             }
                             else
                             {
+                                EventLogUtil.LogEvent($"(Trying to get ERP Route from Mfg/Production Order): Manufacturing Order doesn't have a ERP Route because, Workflow: {oWorkflow.Name.Value} doesn't have a ERP Route", System.Diagnostics.EventLogEntryType.Warning, 3);
                                 return null;
                             }
                         }
                         else
                         {
+                            EventLogUtil.LogEvent($"(Trying to get ERP Route from Mfg/Production Order): Manufacturing Order doesn't have a ERP Route because, Product : {oProduct.Name.Value} doesn't have a workflow!", System.Diagnostics.EventLogEntryType.Warning, 3);
                             return null;
                         }
                     }
                     else
                     {
+                        EventLogUtil.LogEvent($"(Trying to get ERP Route from Mfg/Production Order): Manufacturing Order doesn't have a ERP Route because, Production or Manufacturing Order: {oMfgOrder.Name.Value} doesn't have a product!", System.Diagnostics.EventLogEntryType.Warning, 3);
                         return null;
                     }
                 } else
@@ -372,7 +375,6 @@ namespace ExCoreService
             }
             catch (Exception ex)
             {
-
                 ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
                 EventLogUtil.LogErrorEvent(ex.Source, ex);
                 if (!IgnoreException) throw ex;
