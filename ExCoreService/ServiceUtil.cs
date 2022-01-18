@@ -226,38 +226,6 @@ namespace ExCoreService
         #endregion
 
         #region MAINTENANCE FUNCTION
-        public bool SaveManageInventory(string NameMaterialQueue, string ManageInventory, string ProductNumber, string BatchNumber = "", double Qty = 0, string UOM = "", bool IgnoreException = true)
-        {
-            isManageInventoryService oService = null;
-            try
-            {
-                isManageInventory oServiceObject = null;
-                ResultStatus oResulstStatus = null;
-                oService = new isManageInventoryService(AppSettings.ExCoreUserProfile);
-                EventLogUtil.LogEvent("Prepare Input Data", System.Diagnostics.EventLogEntryType.Information, 2);
-                oServiceObject = new isManageInventory() { sswMaterialQueue = new NamedObjectRef(NameMaterialQueue), isProduct = new RevisionedObjectRef(ProductNumber), isInventoryLocation = new NamedObjectRef(ManageInventory) };
-                if (BatchNumber != "") oServiceObject.isLot = BatchNumber;
-                if (Qty != 0) oServiceObject.isQty = Qty;
-                if (UOM != "") oServiceObject.isUOM = new NamedObjectRef(UOM);
-
-                oResulstStatus = oService.ExecuteTransaction(oServiceObject);
-                string sMessage = "";
-                bool statusManageInventory = ProcessResult(oResulstStatus, ref sMessage, false);
-                EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 2);
-                return statusManageInventory;
-            }
-            catch (Exception ex)
-            {
-                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
-                EventLogUtil.LogErrorEvent(ex.Source, ex);
-                if (!IgnoreException) throw ex;
-                return false;
-            }
-            finally
-            {
-                if (oService != null) oService.Close();
-            }
-        }
         public ProductChanges GetProduct(string ProductName, string ProductRevision = "", bool IgnoreException = true)
         {
             ProductMaintService oService = null;
@@ -749,6 +717,110 @@ namespace ExCoreService
                 bool statusProduct = ProcessResult(oService.CommitTransaction(), ref sMessage, false);
                 EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 2);
                 return statusProduct;
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return false;
+            }
+            finally
+            {
+                if (oService != null) oService.Close();
+            }
+        }
+        public bool SaveManageQueue(string oQueue, string oMfgOrder = "", List<dynamic> MaterialQueueDetails = null, bool isActive = true, bool IgnoreException = true)
+        {
+            isMaterialQueueMaintService oService = null;
+            try
+            {
+                isMaterialQueueMaint oServiceObject = null;
+
+                //check object exists
+                oService = new isMaterialQueueMaintService(AppSettings.ExCoreUserProfile);
+                EventLogUtil.LogEvent("Checking Material Queue" + oQueue, System.Diagnostics.EventLogEntryType.Information, 2);
+                bool bObjectExists = ObjectExists(oService, new isMaterialQueueMaint(), oQueue);
+
+                // Prepare Object
+                EventLogUtil.LogEvent("Preparing Material Queue" + oQueue, System.Diagnostics.EventLogEntryType.Information, 2);
+                oServiceObject = new isMaterialQueueMaint();
+                if (bObjectExists)
+                {
+                    oServiceObject.ObjectToChange = new NamedObjectRef(oQueue);
+                    oService.BeginTransaction();
+                    oService.Load(oServiceObject);
+                }
+                oServiceObject = new isMaterialQueueMaint();
+                oServiceObject.ObjectChanges = new isMaterialQueueChanges();
+                oServiceObject.ObjectChanges.Name = new Primitive<string>() { Value = oQueue };
+                oServiceObject.ObjectChanges.isActive = isActive;
+                if (oMfgOrder != "") oServiceObject.ObjectChanges.isMfgOrder = new NamedObjectRef(oMfgOrder);
+                if (MaterialQueueDetails != null)
+                {
+                    if (MaterialQueueDetails.Count > 0)
+                    {
+                        oServiceObject.ObjectChanges.ReplaceDetails = true;
+                        oServiceObject.ObjectChanges.ReplaceDetailsSubentityListNames = "isMaterialQueueDetails";
+                        var oMaterialQueueDetails = oServiceObject.ObjectChanges.isMaterialQueueDetails;
+                        Array.Resize(ref oMaterialQueueDetails, MaterialQueueDetails.Count);
+                        oServiceObject.ObjectChanges.isMaterialQueueDetails = oMaterialQueueDetails;
+                        for (int index = 0; index < MaterialQueueDetails.Count; index++)
+                        {
+                            oServiceObject.ObjectChanges.isMaterialQueueDetails[index] = MaterialQueueDetails[index];
+                        }
+                    }
+                }
+                // Save the Data
+                if (bObjectExists)
+                {
+                    EventLogUtil.LogEvent("Updating Material Queue" + oQueue, System.Diagnostics.EventLogEntryType.Information, 2);
+                    oService.ExecuteTransaction(oServiceObject);
+                }
+                else
+                {
+                    EventLogUtil.LogEvent("Creating Material Queueu" + oQueue, System.Diagnostics.EventLogEntryType.Information, 2);
+                    oService.BeginTransaction();
+                    oService.New(oServiceObject);
+                    oService.ExecuteTransaction();
+                }
+
+                string sMessage = "";
+                bool statusManageMaterialQueue = ProcessResult(oService.CommitTransaction(), ref sMessage, false);
+                EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 2);
+                return statusManageMaterialQueue;
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return false;
+            }
+            finally
+            {
+                if (oService != null) oService.Close();
+            }
+        }
+        public bool SaveManageInventory(string NameMaterialQueue, string ManageInventory, string ProductNumber, string BatchNumber = "", double Qty = 0, string UOM = "", bool IgnoreException = true)
+        {
+            isManageInventoryService oService = null;
+            try
+            {
+                isManageInventory oServiceObject = null;
+                ResultStatus oResulstStatus = null;
+                oService = new isManageInventoryService(AppSettings.ExCoreUserProfile);
+                EventLogUtil.LogEvent("Prepare Input Data", System.Diagnostics.EventLogEntryType.Information, 2);
+                oServiceObject = new isManageInventory() { sswMaterialQueue = new NamedObjectRef(NameMaterialQueue), isProduct = new RevisionedObjectRef(ProductNumber), isInventoryLocation = new NamedObjectRef(ManageInventory) };
+                if (BatchNumber != "") oServiceObject.isLot = BatchNumber;
+                if (Qty != 0) oServiceObject.isQty = Qty;
+                if (UOM != "") oServiceObject.isUOM = new NamedObjectRef(UOM);
+
+                oResulstStatus = oService.ExecuteTransaction(oServiceObject);
+                string sMessage = "";
+                bool statusManageInventory = ProcessResult(oResulstStatus, ref sMessage, false);
+                EventLogUtil.LogEvent(sMessage, System.Diagnostics.EventLogEntryType.Information, 2);
+                return statusManageInventory;
             }
             catch (Exception ex)
             {

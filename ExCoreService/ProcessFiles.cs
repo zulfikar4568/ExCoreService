@@ -127,7 +127,8 @@ namespace ExCoreService
         public bool ProcessingFileOrderBOM(string FileName)
         {
             ServiceUtil oServiceUtil = new ServiceUtil();
-            bool result = false;
+            bool resultMfgOrder = false;
+            bool resultQueue = false;
             string[] lineCSV = System.IO.File.ReadAllLines(FileName);
             var ProductionOrder = new List<string>();
             var OperationNumber = new List<string>();
@@ -157,6 +158,7 @@ namespace ExCoreService
                     if (oMfgOrder.Qty.Value != 0)
                     {
                         List<dynamic> cMaterialList = new List<dynamic>();
+                        List<dynamic> cMaterialQueueDetails = new List<dynamic>();
                         for (int j = 0; j < lineCSV.Length - 1; j++)
                         {
                             if (oMfgOrder.Name.ToString() == ProductionOrder[j])
@@ -171,7 +173,9 @@ namespace ExCoreService
                                         {
                                             if (routeStep.Sequence.Value == OperationNumber[j] && routeStep.Name != null)
                                             {
-                                                cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value) });
+                                                cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.LotAndStockPoint, RouteStep = new NamedSubentityRef(routeStep.Name.Value) });
+                                                cMaterialQueueDetails.Add(new isMaterialQueueDetailsChanges() { isProduct = new RevisionedObjectRef(PartRequired[j]), isName = PartRequired[j],  isQty = Convert.ToDouble(Qty[j]), isQtyAvailable = Convert.ToDouble(Qty[j]), isUOM = new NamedObjectRef("Unit"), isRemovalStrategy = isRemovalStrategyEnum.FIFO, isSequence = (j+1), isConsumedQty = 0, isLot = PartRequired[j], isInventoryLocation = new NamedObjectRef("Warehouse")});
+                                                //oServiceUtil.SaveManageInventory(oMfgOrder.Name.Value, "Warehouse", PartRequired[j],PartRequired[j], Convert.ToDouble(Qty[j]), "Unit");
                                             }
                                         }
                                     }
@@ -179,19 +183,20 @@ namespace ExCoreService
                                 Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber[j]} | {PartRequired[j]} | {Qty[j]}");
                             }
                         }
-                        if (cMaterialList.Count > 0)
+                        //if (cMaterialList.Count > 0)
                         //{
-                            //var newIssueDetails = cMaterialList.GroupBy(x => x.Product.Name).Select(x => x.First()).ToList();
-                            //result = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, newIssueDetails, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
+                        //var newIssueDetails = cMaterialList.GroupBy(x => x.Product.Name).Select(x => x.First()).ToList();
+                        //result = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, newIssueDetails, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
                         //} else
                         //{
-                            result = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, cMaterialList, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
+                        resultQueue = oServiceUtil.SaveManageQueue(oMfgOrder.Name.ToString(), oMfgOrder.Name.ToString(), cMaterialQueueDetails);
+                        resultMfgOrder = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, cMaterialList, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
                         //}
-                        if (!result) break;
+                        if (!resultMfgOrder || !resultQueue) break;
                     }
                 }
             }
-            return result;
+            return resultMfgOrder && resultQueue;
         }
         public bool ProcessingFileMfgOrder(string FileName)
         {
