@@ -368,7 +368,8 @@ namespace ExCoreService
                         EventLogUtil.LogEvent($"(Trying to get ERP Route from Mfg/Production Order): Manufacturing Order doesn't have a ERP Route because, Production or Manufacturing Order: {oMfgOrder.Name.Value} doesn't have a product!", System.Diagnostics.EventLogEntryType.Warning, 3);
                         return null;
                     }
-                } else
+                }
+                else
                 {
                     return null;
                 }
@@ -411,7 +412,7 @@ namespace ExCoreService
                 oServiceRequest.Info.ObjectChanges.Status = new Info(true);
 
                 ERPRouteMaint_Result oServiceResult = null;
-                ResultStatus oResultStatus = oService.Load(oServiceObject ,oServiceRequest, out oServiceResult);
+                ResultStatus oResultStatus = oService.Load(oServiceObject, oServiceRequest, out oServiceResult);
 
                 EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
                 if (oServiceResult.Value.ObjectChanges != null)
@@ -649,7 +650,7 @@ namespace ExCoreService
                 if (oService != null) oService.Close();
             }
         }
-        public bool SaveProduct(string ProductName, string Revision, string IsRevOfRcd = "", string Description = "", string Notes ="", string ProductType = "", string DocumentSet = "", string WorkflowName = "", string WorkflowRevision = "", string BOMName = "", string BOMRevision = "", bool IgnoreException = true)
+        public bool SaveProduct(string ProductName, string Revision, string IsRevOfRcd = "", string Description = "", string Notes = "", string ProductType = "", string DocumentSet = "", string WorkflowName = "", string WorkflowRevision = "", string BOMName = "", string BOMRevision = "", bool IgnoreException = true)
         {
             ProductMaintService oService = null;
             try
@@ -668,7 +669,8 @@ namespace ExCoreService
                     oServiceObject.ObjectToChange = new RevisionedObjectRef(ProductName, Revision);
                     oService.BeginTransaction();
                     oService.Load(oServiceObject);
-                } else if (bBaseExists)
+                }
+                else if (bBaseExists)
                 {
                     oService.BeginTransaction();
                     oServiceObject.BaseToChange = new RevisionedObjectRef();
@@ -678,7 +680,7 @@ namespace ExCoreService
                 // PrepareInput Data
                 oServiceObject = new ProductMaint();
                 oServiceObject.ObjectChanges = new ProductChanges();
-                oServiceObject.ObjectChanges.Name = new Primitive<string>() { Value = ProductName};
+                oServiceObject.ObjectChanges.Name = new Primitive<string>() { Value = ProductName };
                 oServiceObject.ObjectChanges.Revision = new Primitive<string>() { Value = Revision };
                 if (IsRevOfRcd != "") oServiceObject.ObjectChanges.IsRevOfRcd = new Primitive<bool>() { Value = Convert.ToBoolean(IsRevOfRcd) };
                 if (Description != "") oServiceObject.ObjectChanges.Description = new Primitive<string>() { Value = Description };
@@ -688,14 +690,16 @@ namespace ExCoreService
                 if (WorkflowName != "" && WorkflowRevision == "")
                 {
                     oServiceObject.ObjectChanges.Workflow = new RevisionedObjectRef(WorkflowName);
-                } else if (WorkflowName != "" && WorkflowRevision != "")
+                }
+                else if (WorkflowName != "" && WorkflowRevision != "")
                 {
                     oServiceObject.ObjectChanges.Workflow = new RevisionedObjectRef(WorkflowName, WorkflowRevision);
                 }
                 if (BOMName != "" && BOMRevision == "")
                 {
                     oServiceObject.ObjectChanges.BOM = new RevisionedObjectRef(BOMName);
-                } else if (BOMName != "" && BOMRevision != "")
+                }
+                else if (BOMName != "" && BOMRevision != "")
                 {
                     oServiceObject.ObjectChanges.BOM = new RevisionedObjectRef(BOMName, BOMRevision);
                 }
@@ -704,11 +708,13 @@ namespace ExCoreService
                 {
                     EventLogUtil.LogEvent($"Updating Product {ProductName} : {Revision}", System.Diagnostics.EventLogEntryType.Information, 3);
                     oService.ExecuteTransaction(oServiceObject);
-                } else if (bBaseExists)
+                }
+                else if (bBaseExists)
                 {
                     EventLogUtil.LogEvent($"Creating Product {ProductName} : {Revision}", System.Diagnostics.EventLogEntryType.Information, 3);
                     oService.ExecuteTransaction(oServiceObject);
-                } else
+                }
+                else
                 {
                     EventLogUtil.LogEvent($"Creating Product {ProductName} : {Revision}", System.Diagnostics.EventLogEntryType.Information, 3);
                     oService.BeginTransaction();
@@ -933,7 +939,7 @@ namespace ExCoreService
                 if (!(oService is null)) oService.Close();
             }
         }
-        public bool ExecuteMoveIn(string ContainerName, string ResourceName, string DataCollectionName = "", string DataCollectionRev = "", DataPointDetails[] DataPoints = null, string Comments = "", string EmployeeName = "", string TxnDateStr = "", bool IgnoreException = true)
+        public bool ExecuteMoveIn(string ContainerName, string ResourceName, string DataCollectionName = "", string DataCollectionRev = "", DataPointDetails[] DataPoints = null, string CarrierName = "", bool EnforceResource = false, string Comments = "", string EmployeeName = "", string TxnDateStr = "", bool IgnoreException = true)
         {
             MoveInService oService = null;
             try
@@ -943,7 +949,7 @@ namespace ExCoreService
                 ResultStatus oResulstStatus = null;
                 oService = new MoveInService(AppSettings.ExCoreUserProfile);
                 EventLogUtil.LogEvent("Setting input data for MoveIn ...", System.Diagnostics.EventLogEntryType.Information, 2);
-                oServiceObject = new MoveIn() { Container = new ContainerRef(ContainerName) };
+                oServiceObject = new MoveIn() { Container = new ContainerRef(ContainerName), sswEnforceResource = EnforceResource };
                 if (ResourceName != "") oServiceObject.Resource = new NamedObjectRef(ResourceName);
                 if (DataPoints != null)
                 {
@@ -957,6 +963,11 @@ namespace ExCoreService
                         DataPointSummary oDataPointSummaryRef = GetDataPointSummaryRef(oService, oServiceObject, new MoveIn_Request(), new MoveIn_Info(), ref DataCollectionName, ref DataCollectionRev);
                         oServiceObject.ParametricData = SetDataPointSummary(oDataPointSummaryRef, DataPoints);
                     }
+                }
+                if (CarrierName != "")
+                {
+                    oServiceObject.sswAttachCarrier = true;
+                    oServiceObject.Carrier = new NamedObjectRef(CarrierName);
                 }
                 if (Comments != "") oServiceObject.Comments = Comments;
                 if (EmployeeName != null) oServiceObject.Employee = new NamedObjectRef(EmployeeName);
@@ -983,7 +994,7 @@ namespace ExCoreService
                 if (!(oService is null)) oService.Close();
             }
         }
-        public bool ExecuteMoveStd(string ContainerName, string ToResourceName = "", string Resource = "", string DataCollectionName = "", string DataCollectionRev = "", DataPointDetails[] DataPoints = null, string Comments = "", string EmployeeName = "", string TxnDateStr = "", bool IgnoreException = true)
+        public bool ExecuteMoveStd(string ContainerName, string ToResourceName = "", string Resource = "", string DataCollectionName = "", string DataCollectionRev = "", DataPointDetails[] DataPoints = null, string CarrierName = "", string Comments = "", string EmployeeName = "", string TxnDateStr = "", bool IgnoreException = true)
         {
             MoveStdService oService = null;
             try
@@ -1016,6 +1027,11 @@ namespace ExCoreService
                     }
                 }
 
+                if (CarrierName != "")
+                {
+                    oServiceObject.sswAttachCarrier = true;
+                    oServiceObject.Carrier = new NamedObjectRef(CarrierName);
+                }
                 if (Comments != "") oServiceObject.Comments = Comments;
                 if (EmployeeName != "") oServiceObject.Employee = new NamedObjectRef(EmployeeName);
                 if (IsDate(TxnDateStr)) oServiceObject.TxnDate = DateTime.Parse(TxnDateStr);
@@ -1136,7 +1152,6 @@ namespace ExCoreService
                 //Requets the Data
                 ContainerTxn_Result oServiceResult = null;
                 ResultStatus oResultStatus = oService.GetEnvironment(oServiceObject, oServiceRequest, out oServiceResult);
-                Console.WriteLine(oResultStatus.IsSuccess);
 
                 //Return Result
                 string sMessage = "";
@@ -1258,6 +1273,45 @@ namespace ExCoreService
                 oServiceRequest.Info.ObjectListInquiry.RequestValue = true;
 
                 ResourceStatusCodeMaint_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.GetEnvironment(oServiceRequest, out oServiceResult);
+
+                EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
+                string sMessage = "";
+                if (ProcessResult(oResultStatus, ref sMessage, true))
+                {
+                    return oServiceResult.Value.ObjectListInquiry;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return null;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public NamedObjectRef[] GetCarrierList(bool IgnoreException = true)
+        {
+            CarrierMaintService oService = null;
+            try
+            {
+                oService = new CarrierMaintService(AppSettings.ExCoreUserProfile);
+                CarrierMaint oServiceObject = new CarrierMaint();
+
+                CarrierMaint_Request oServiceRequest = new CarrierMaint_Request();
+                oServiceRequest.Info = new CarrierMaint_Info();
+                oServiceRequest.Info.ObjectListInquiry = new Info(true);
+                oServiceRequest.Info.ObjectListInquiry.RequestValue = true;
+
+                CarrierMaint_Result oServiceResult = null;
                 ResultStatus oResultStatus = oService.GetEnvironment(oServiceRequest, out oServiceResult);
 
                 EventLogUtil.LogEvent(oResultStatus.Message, System.Diagnostics.EventLogEntryType.Information, 3);
