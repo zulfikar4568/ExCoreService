@@ -186,15 +186,21 @@ namespace ExCoreService
                                         bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), PartRequired[j], "");
                                         if (ObjectExists)
                                         {
-                                            if (oERPRoute.RouteSteps.Length > 0)
+                                            if (oERPRoute.RouteSteps != null)
                                             {
-                                                foreach (var routeStep in oERPRoute.RouteSteps)
+                                                if (oERPRoute.RouteSteps.Length > 0)
                                                 {
-                                                    if (routeStep.Sequence.Value == OperationNumber[j] && routeStep.Name != null)
+                                                    foreach (var routeStep in oERPRoute.RouteSteps)
                                                     {
-                                                        cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value) });
-                                                        cMaterialQueueDetails.Add(new isMaterialQueueDetailsChanges() { isProduct = new RevisionedObjectRef(PartRequired[j]), isQty = Convert.ToDouble(Qty[j]), isQtyAvailable = Convert.ToDouble(Qty[j]), isUOM = new NamedObjectRef(AppSettings.DefaultUOM), isRemovalStrategy = isRemovalStrategyEnum.FIFO, isSequence = (j + 1), isConsumedQty = 0, isInventoryLocation = new NamedObjectRef(AppSettings.DefaultInventoryLocation) });
-                                                        //oServiceUtil.SaveManageInventory(oMfgOrder.Name.Value, "Warehouse", PartRequired[j],PartRequired[j], Convert.ToDouble(Qty[j]), "Unit");
+                                                        if (routeStep.Sequence != null)
+                                                        {
+                                                            if (routeStep.Sequence.Value == OperationNumber[j] && routeStep.Name != null)
+                                                            {
+                                                                cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value) });
+                                                                cMaterialQueueDetails.Add(new isMaterialQueueDetailsChanges() { isProduct = new RevisionedObjectRef(PartRequired[j]), isQty = Convert.ToDouble(Qty[j]), isQtyAvailable = Convert.ToDouble(Qty[j]), isUOM = new NamedObjectRef(AppSettings.DefaultUOM), isRemovalStrategy = isRemovalStrategyEnum.FIFO, isSequence = (j + 1), isConsumedQty = 0, isInventoryLocation = new NamedObjectRef(AppSettings.DefaultInventoryLocation) });
+                                                                //oServiceUtil.SaveManageInventory(oMfgOrder.Name.Value, "Warehouse", PartRequired[j],PartRequired[j], Convert.ToDouble(Qty[j]), "Unit");
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -208,8 +214,8 @@ namespace ExCoreService
                                 }
                                 resultQueue = oServiceUtil.SaveManageQueue(oMfgOrder.Name.ToString(), oMfgOrder.Name.ToString(), cMaterialQueueDetails);
                                 resultMfgOrder = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, cMaterialList, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
-                                if (!resultMfgOrder) throw new ArgumentException($"Something wrong when tried to update Manufacturing or Production Order: {oMfgOrder.Name.Value}.\nThe {oMfgOrder.Name.Value} data is the cause of error, try to remove this {oMfgOrder.Name.Value} data on material list.");
-                                if (!resultQueue) throw new ArgumentException($"Something wrong when tried to update Queue: {oMfgOrder.Name.Value}.\nThe {oMfgOrder.Name.Value} data is the cause of error, try to remove this {oMfgOrder.Name.Value} data on material list.");
+                                if (!resultMfgOrder) throw new ArgumentException($"Something wrong when tried to update Manufacturing or Production Order: {oMfgOrder.Name.Value}.\nThe {oMfgOrder.Name.Value} data is the cause of error, try to remove this {oMfgOrder.Name.Value} data on order BOM list.");
+                                if (!resultQueue) throw new ArgumentException($"Something wrong when tried to update Queue: {oMfgOrder.Name.Value}.\nThe {oMfgOrder.Name.Value} data is the cause of error, try to remove this {oMfgOrder.Name.Value} data on order BOM list.");
                             }
                             else
                             {
