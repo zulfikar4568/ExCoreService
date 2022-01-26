@@ -939,7 +939,7 @@ namespace ExCoreService
                 if (!(oService is null)) oService.Close();
             }
         }
-        public bool ExecuteMoveIn(string ContainerName, string ResourceName, string DataCollectionName = "", string DataCollectionRev = "", DataPointDetails[] DataPoints = null, string CarrierName = "", bool EnforceResource = false, string Comments = "", string EmployeeName = "", string TxnDateStr = "", bool IgnoreException = true)
+        public bool ExecuteMoveIn(string ContainerName, string ResourceName, string DataCollectionName = "", string DataCollectionRev = "", DataPointDetails[] DataPoints = null, string CarrierName = "", bool AttachDetachCarrier = false, bool EnforceResource = false, string Comments = "", string EmployeeName = "", string TxnDateStr = "", bool IgnoreException = true)
         {
             MoveInService oService = null;
             try
@@ -964,9 +964,14 @@ namespace ExCoreService
                         oServiceObject.ParametricData = SetDataPointSummary(oDataPointSummaryRef, DataPoints);
                     }
                 }
-                if (CarrierName != "")
+                if (CarrierName != "" && AttachDetachCarrier) //Attach = true
                 {
                     oServiceObject.sswAttachCarrier = true;
+                    oServiceObject.Carrier = new NamedObjectRef(CarrierName);
+                }
+                else if (CarrierName != "" && !AttachDetachCarrier)  //Detach = false
+                {
+                    oServiceObject.sswDetachCarrier = true;
                     oServiceObject.Carrier = new NamedObjectRef(CarrierName);
                 }
                 if (Comments != "") oServiceObject.Comments = Comments;
@@ -994,7 +999,7 @@ namespace ExCoreService
                 if (!(oService is null)) oService.Close();
             }
         }
-        public bool ExecuteMoveStd(string ContainerName, string ToResourceName = "", string Resource = "", string DataCollectionName = "", string DataCollectionRev = "", DataPointDetails[] DataPoints = null, string CarrierName = "", string Comments = "", string EmployeeName = "", string TxnDateStr = "", bool IgnoreException = true)
+        public bool ExecuteMoveStd(string ContainerName, string ToResourceName = "", string Resource = "", string DataCollectionName = "", string DataCollectionRev = "", DataPointDetails[] DataPoints = null, string CarrierName = "", bool AttachDetachCarrier = false, string Comments = "", string EmployeeName = "", string TxnDateStr = "", bool IgnoreException = true)
         {
             MoveStdService oService = null;
             try
@@ -1027,9 +1032,14 @@ namespace ExCoreService
                     }
                 }
 
-                if (CarrierName != "")
+                if (CarrierName != "" && AttachDetachCarrier) //Attach = true
                 {
                     oServiceObject.sswAttachCarrier = true;
+                    oServiceObject.Carrier = new NamedObjectRef(CarrierName);
+                }
+                else if (CarrierName != "" && !AttachDetachCarrier)  //Detach = false
+                {
+                    oServiceObject.sswDetachCarrier = true;
                     oServiceObject.Carrier = new NamedObjectRef(CarrierName);
                 }
                 if (Comments != "") oServiceObject.Comments = Comments;
@@ -1124,6 +1134,49 @@ namespace ExCoreService
                 EventLogUtil.LogErrorEvent(ex.Source, ex);
                 if (!IgnoreException) throw ex;
                 return false;
+            }
+            finally
+            {
+                if (!(oService is null)) oService.Close();
+            }
+        }
+        public string GetCurrentContainerStep(string ContainerName, bool IgnoreException = true)
+        {
+            ViewContainerStatusService oService = null;
+            try
+            {
+                oService = new ViewContainerStatusService(AppSettings.ExCoreUserProfile);
+
+                //Set input Data
+                ViewContainerStatus oServiceObject = new ViewContainerStatus();
+                oServiceObject.Container = new ContainerRef(ContainerName);
+                ViewContainerStatus_Request oServiceRequest = new ViewContainerStatus_Request();
+                oServiceRequest.Info = new ViewContainerStatus_Info();
+                oServiceRequest.Info.RequestValue = true;
+                oServiceRequest.Info.ContainerName = new Info(true);
+                oServiceRequest.Info.Step = new Info(true);
+
+                //Request the Data
+                ViewContainerStatus_Result oServiceResult = null;
+                ResultStatus oResultStatus = oService.ExecuteTransaction(oServiceObject, oServiceRequest, out oServiceResult);
+
+                //Return Result
+                string sMessage = "";
+                if (ProcessResult(oResultStatus, ref sMessage, false))
+                {
+                    return oServiceResult.Value.Step.Value;
+                }
+                else
+                {
+                    return "";
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                EventLogUtil.LogErrorEvent(ex.Source, ex);
+                if (!IgnoreException) throw ex;
+                return "";
             }
             finally
             {
