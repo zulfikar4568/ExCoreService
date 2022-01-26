@@ -43,6 +43,8 @@ Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\EventLog\Security
 
 ![Permission Event Log](./Images/EventLogPermission4.jpg)
 
+# Documentation API
+- [Service Util API](./ExCoreService/README.md)
 # How deploy this service
 - Copy all files in /bin/debug/ to somewhere else folder
 - Open CMD as Administrator write for example 
@@ -54,3 +56,6 @@ $ ExCoreService.exe uninstall
 ```
 # Released Notes
 - [v1.0.1](https://github.com/zulfikar4568/ExCoreService/releases/tag/v1.0.1) Import Order BOM (Material List) and Order (Production Order)
+
+# License & Copy Right
+© M. Zulfikar Isnaen, This is Under [MIT License](LICENSE).
