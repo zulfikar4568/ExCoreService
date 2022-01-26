@@ -56,6 +56,7 @@ $ ExCoreService.exe uninstall
 ```
 # Released Notes
 - [v1.0.1](https://github.com/zulfikar4568/ExCoreService/releases/tag/v1.0.1) Import Order BOM (Material List) and Order (Production Order)
+- [v1.0.2](https://github.com/zulfikar4568/ExCoreService/releases/tag/v1.0.2) Fixing Bug (Order BOM import Error When Route Steps Sequence is null)
 
 # License & Copy Right
 © M. Zulfikar Isnaen, This is Under [MIT License](LICENSE).
