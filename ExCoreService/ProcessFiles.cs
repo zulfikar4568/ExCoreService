@@ -16,23 +16,31 @@ namespace ExCoreService
         {
             try
             {
-                NetUtil.Connect(AppSettings.SourceUNCPath, AppSettings.SourceUNCPathUsername, AppSettings.SourceUNCPathPassword);
-                NetUtil.Connect(AppSettings.CompletedUNCPath, AppSettings.CompletedUNCPathUsername, AppSettings.CompletedUNCPathPassword);
-                NetUtil.Connect(AppSettings.ErrorUNCPath, AppSettings.ErrorUNCPathUsername, AppSettings.SourceUNCPathPassword);
-                if (!Directory.Exists(AppSettings.SourceFolder)) Directory.CreateDirectory(AppSettings.SourceFolder);
-                if (!Directory.Exists(AppSettings.CompletedFolder)) Directory.CreateDirectory(AppSettings.CompletedFolder);
-                if (!Directory.Exists(AppSettings.ErrorFolder)) Directory.CreateDirectory(AppSettings.ErrorFolder);
+                NetUtil.Connect(AppSettings.OrderSourceUNCPath, AppSettings.OrderSourceUNCPathUsername, AppSettings.OrderSourceUNCPathPassword);
+                NetUtil.Connect(AppSettings.OrderCompletedUNCPath, AppSettings.OrderCompletedUNCPathUsername, AppSettings.OrderCompletedUNCPathPassword);
+                NetUtil.Connect(AppSettings.OrderErrorUNCPath, AppSettings.OrderErrorUNCPathUsername, AppSettings.OrderSourceUNCPathPassword);
+                if (!Directory.Exists(AppSettings.OrderSourceFolder)) Directory.CreateDirectory(AppSettings.OrderSourceFolder);
+                if (!Directory.Exists(AppSettings.OrderCompletedFolder)) Directory.CreateDirectory(AppSettings.OrderCompletedFolder);
+                if (!Directory.Exists(AppSettings.OrderErrorFolder)) Directory.CreateDirectory(AppSettings.OrderErrorFolder);
+
+                NetUtil.Connect(AppSettings.OrderBOMSourceUNCPath, AppSettings.OrderBOMSourceUNCPathUsername, AppSettings.OrderBOMSourceUNCPathPassword);
+                NetUtil.Connect(AppSettings.OrderBOMCompletedUNCPath, AppSettings.OrderBOMCompletedUNCPathUsername, AppSettings.OrderBOMCompletedUNCPathPassword);
+                NetUtil.Connect(AppSettings.OrderBOMErrorUNCPath, AppSettings.OrderBOMErrorUNCPathUsername, AppSettings.OrderBOMSourceUNCPathPassword);
+                if (!Directory.Exists(AppSettings.OrderBOMSourceFolder)) Directory.CreateDirectory(AppSettings.OrderBOMSourceFolder);
+                if (!Directory.Exists(AppSettings.OrderBOMCompletedFolder)) Directory.CreateDirectory(AppSettings.OrderBOMCompletedFolder);
+                if (!Directory.Exists(AppSettings.OrderBOMErrorFolder)) Directory.CreateDirectory(AppSettings.OrderBOMErrorFolder);
             } catch (Exception ex)
             {
                 EventLogUtil.LogErrorEvent(typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
-        } 
-        public void ProcessingFile(string serviceMode)
+        }
+        //Services mode can be: MfgOrder, OrderBOM, MasterProduct
+        public void ProcessingFile(string serviceMode, string sourceFolder, string completedFolder, string errorFolder)
         {
             try
             {
                 // Retrieve file from Source Folder
-                foreach (string sFileName in Directory.GetFiles(AppSettings.SourceFolder, "*.csv"))
+                foreach (string sFileName in Directory.GetFiles(sourceFolder, "*.csv"))
                 {
                     bool bResult = false;
                     EventLogUtil.LogEvent("Processing" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
@@ -49,11 +57,11 @@ namespace ExCoreService
                     {
                         if (bResult)
                         {
-                            sDestinationFileName = AppSettings.CompletedFolder + "\\" + System.IO.Path.GetFileName(sFileName);
+                            sDestinationFileName = completedFolder + "\\" + System.IO.Path.GetFileName(sFileName);
                         }
                         else
                         {
-                            sDestinationFileName = AppSettings.ErrorFolder + "\\" + System.IO.Path.GetFileName(sFileName);
+                            sDestinationFileName = errorFolder + "\\" + System.IO.Path.GetFileName(sFileName);
                         }
                         if (iFileNo > 0)
                         {
@@ -117,8 +125,6 @@ namespace ExCoreService
 
             for (int j = 0; j < lineCSV.Length - 1; j++)
             {
-                Console.WriteLine($"{j} | {ProductNumber[j]} | {Description[j]} |");
-                //result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], "", "", Product[i], "", Workflow[i], "", Convert.ToDouble(Qty[i]), null, "", StartTime[i], EndTime[i], "", "Released", true);
                 result = oServiceUtil.SaveProduct(ProductNumber[j], "1", "", Description[j], "", ProductType[j]);
                 if (!result) break;
             }

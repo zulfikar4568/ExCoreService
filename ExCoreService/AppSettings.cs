@@ -32,13 +32,6 @@ namespace ExCoreService
                 return ConfigurationManager.AppSettings["DefaultInventoryLocation"];
             }
         }
-        public static string ServicesMode
-        {
-            get
-            {
-                return ConfigurationManager.AppSettings["ServicesMode"];
-            }
-        }
         public static string Workflow
         {
             get
@@ -108,28 +101,30 @@ namespace ExCoreService
                 return _ExCoreUserProfile;
             }
         }
-        public static string SourceUNCPath
+
+        #region SOURCE FOLDER
+        public static string OrderSourceUNCPath
         {
             get
             {
-                return ConfigurationManager.AppSettings["SourceUNCPath"];
+                return ConfigurationManager.AppSettings["OrderSourceUNCPath"];
             }
         }
-        public static string SourceUNCPathUsername
+        public static string OrderSourceUNCPathUsername
         {
             get
             {
-                return ConfigurationManager.AppSettings["SourceUNCPathUsername"];
+                return ConfigurationManager.AppSettings["OrderSourceUNCPathUsername"];
             }
         }
-        public static string SourceUNCPathPassword
+        public static string OrderSourceUNCPathPassword
         {
             get
             {
-                if (ConfigurationManager.AppSettings["SourceUNCPathPassword"] != "")
+                if (ConfigurationManager.AppSettings["OrderSourceUNCPathPassword"] != "")
                 {
                     Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
-                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["SourceUNCPathPassword"]);
+                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["OrderSourceUNCPathPassword"]);
                 }
                 else
                 {
@@ -137,35 +132,36 @@ namespace ExCoreService
                 }
             }
         }
-        public static string SourceFolder
+        public static string OrderSourceFolder
         {
             get
             {
-                return ConfigurationManager.AppSettings["SourceFolder"];
+                return ConfigurationManager.AppSettings["OrderSourceFolder"];
             }
         }
-        public static string CompletedUNCPath
+
+        public static string OrderBOMSourceUNCPath
         {
             get
             {
-                return ConfigurationManager.AppSettings["CompletedUNCPath"];
+                return ConfigurationManager.AppSettings["OrderBOMSourceUNCPath"];
             }
         }
-        public static string CompletedUNCPathUsername
+        public static string OrderBOMSourceUNCPathUsername
         {
             get
             {
-                return ConfigurationManager.AppSettings["CompletedUNCPathUsername"];
+                return ConfigurationManager.AppSettings["OrderBOMSourceUNCPathUsername"];
             }
         }
-        public static string CompletedUNCPathPassword
+        public static string OrderBOMSourceUNCPathPassword
         {
             get
             {
-                if (ConfigurationManager.AppSettings["CompletedUNCPathPassword"] != "")
+                if (ConfigurationManager.AppSettings["OrderBOMSourceUNCPathPassword"] != "")
                 {
                     Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
-                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["CompletedUNCPathPassword"]);
+                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["OrderBOMSourceUNCPathPassword"]);
                 }
                 else
                 {
@@ -173,35 +169,39 @@ namespace ExCoreService
                 }
             }
         }
-        public static string CompletedFolder
+        public static string OrderBOMSourceFolder
         {
             get
             {
-                return ConfigurationManager.AppSettings["CompletedFolder"];
+                return ConfigurationManager.AppSettings["OrderBOMSourceFolder"];
             }
         }
-        public static string ErrorUNCPath
+
+        #endregion
+
+        #region COMPLETED FOLDER
+        public static string OrderCompletedUNCPath
         {
             get
             {
-                return ConfigurationManager.AppSettings["ErrorUNCPath"];
+                return ConfigurationManager.AppSettings["OrderCompletedUNCPath"];
             }
         }
-        public static string ErrorUNCPathUsername
+        public static string OrderCompletedUNCPathUsername
         {
             get
             {
-                return ConfigurationManager.AppSettings["ErrorUNCPathUsername"];
+                return ConfigurationManager.AppSettings["OrderCompletedUNCPathUsername"];
             }
         }
-        public static string ErrorUNCPathPassword
+        public static string OrderCompletedUNCPathPassword
         {
             get
             {
-                if (ConfigurationManager.AppSettings["ErrorUNCPathPassword"] != "")
+                if (ConfigurationManager.AppSettings["OrderCompletedUNCPathPassword"] != "")
                 {
                     Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
-                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["ErrorUNCPathPassword"]);
+                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["OrderCompletedUNCPathPassword"]);
                 }
                 else
                 {
@@ -209,12 +209,126 @@ namespace ExCoreService
                 }
             }
         }
-        public static string ErrorFolder
+        public static string OrderCompletedFolder
         {
             get
             {
-                return ConfigurationManager.AppSettings["ErrorFolder"];
+                return ConfigurationManager.AppSettings["OrderCompletedFolder"];
             }
         }
+
+        public static string OrderBOMCompletedUNCPath
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["OrderBOMCompletedUNCPath"];
+            }
+        }
+        public static string OrderBOMCompletedUNCPathUsername
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["OrderBOMCompletedUNCPathUsername"];
+            }
+        }
+        public static string OrderBOMCompletedUNCPathPassword
+        {
+            get
+            {
+                if (ConfigurationManager.AppSettings["OrderBOMCompletedUNCPathPassword"] != "")
+                {
+                    Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
+                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["OrderBOMCompletedUNCPathPassword"]);
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+        public static string OrderBOMCompletedFolder
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["OrderBOMCompletedFolder"];
+            }
+        }
+        #endregion
+
+        #region ERROR FOLDER
+        public static string OrderErrorUNCPath
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["OrderErrorUNCPath"];
+            }
+        }
+        public static string OrderErrorUNCPathUsername
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["OrderErrorUNCPathUsername"];
+            }
+        }
+        public static string OrderErrorUNCPathPassword
+        {
+            get
+            {
+                if (ConfigurationManager.AppSettings["OrderErrorUNCPathPassword"] != "")
+                {
+                    Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
+                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["OrderErrorUNCPathPassword"]);
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+        public static string OrderErrorFolder
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["OrderErrorFolder"];
+            }
+        }
+
+        public static string OrderBOMErrorUNCPath
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["OrderBOMErrorUNCPath"];
+            }
+        }
+        public static string OrderBOMErrorUNCPathUsername
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["OrderBOMErrorUNCPathUsername"];
+            }
+        }
+        public static string OrderBOMErrorUNCPathPassword
+        {
+            get
+            {
+                if (ConfigurationManager.AppSettings["OrderBOMErrorUNCPathPassword"] != "")
+                {
+                    Simple3Des oSimple3Des = new Simple3Des(ConfigurationManager.AppSettings["ExCorePasswordKey"]);
+                    return oSimple3Des.DecryptData(ConfigurationManager.AppSettings["OrderBOMErrorUNCPathPassword"]);
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+        public static string OrderBOMErrorFolder
+        {
+            get
+            {
+                return ConfigurationManager.AppSettings["OrderBOMErrorFolder"];
+            }
+        }
+        #endregion
     }
 }
