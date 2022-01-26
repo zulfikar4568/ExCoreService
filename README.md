@@ -4,18 +4,18 @@ This service Install TopShelf in NuGetPackage, and this is using Timer that mean
 # How to install `.dll` Opcenter to project
 
 * Remove Warning `.dll` file
-    * Select the `.dll` in reference, and click remove
-![Remove Reference](./Images/removeReference1.jpg)
+    * Select the `.dll` in reference, and click remove </br>
+![Remove Reference](./Images/removeReference1.jpg)</br>
 
-* Click add Reference
-![Add Reference](./Images/AddReference1.jpg)
+* Click add Reference</br>
+![Add Reference](./Images/AddReference1.jpg)</br>
 
 * Click Browse
-    * Select the all library in folder `/lib`, like in the picture.
-![Add Reference](./Images/AddRefrence2.jpg)
+    * Select the all library in folder `/lib`, like in the picture.</br>
+![Add Reference](./Images/AddRefrence2.jpg)</br>
 
-* Select the `.dll` file and click ok
-![Add Reference](./Images/AddRefrence3.jpg)
+* Select the `.dll` file and click ok</br>
+![Add Reference](./Images/AddRefrence3.jpg)</br>
 
 # Enabled Event Log on windows Machine
 - Log on to the computer as an administrator.
@@ -53,4 +53,4 @@ $ ExCoreService.exe install start
 $ ExCoreService.exe uninstall
 ```
 # Released Notes
-- [v1.0.1]() Import Order BOM (Material List) and Order (Production Order)
+- [v1.0.1](https://github.com/zulfikar4568/ExCoreService/releases/tag/v1.0.1) Import Order BOM (Material List) and Order (Production Order)
