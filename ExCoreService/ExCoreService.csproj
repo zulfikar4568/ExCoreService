@@ -61,20 +61,25 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Camstar.Exceptions">
-      <HintPath>D:\3. OPCENTER\NEW FOR WCF\Camstar.Exceptions.dll</HintPath>
+    <Reference Include="Camstar.Exceptions, Version=8.3.7871.22572, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\Camstar.Exceptions.dll</HintPath>
     </Reference>
-    <Reference Include="Camstar.Util">
-      <HintPath>D:\3. OPCENTER\NEW FOR WCF\Camstar.Util.dll</HintPath>
+    <Reference Include="Camstar.Util, Version=8.3.7871.22572, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\Camstar.Util.dll</HintPath>
     </Reference>
-    <Reference Include="Camstar.WCFClient">
-      <HintPath>D:\3. OPCENTER\NEW FOR WCF\Camstar.WCFClient.dll</HintPath>
+    <Reference Include="Camstar.WCFClient, Version=8.3.7871.22573, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\Camstar.WCFClient.dll</HintPath>
     </Reference>
-    <Reference Include="Camstar.WCFClientBase">
-      <HintPath>D:\3. OPCENTER\NEW FOR WCF\Camstar.WCFClientBase.dll</HintPath>
+    <Reference Include="Camstar.WCFClientBase, Version=8.3.7871.22573, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\Camstar.WCFClientBase.dll</HintPath>
     </Reference>
-    <Reference Include="InSiteXMLClient">
-      <HintPath>D:\3. OPCENTER\NEW FOR WCF\InSiteXMLClient.dll</HintPath>
+    <Reference Include="InSiteXMLClient, Version=8.3.7871.22683, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\InSiteXMLClient.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -109,6 +114,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Endpoints.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="ExCoreService_TemporaryKey.pfx" />
     <None Include="packages.config" />
   </ItemGroup>
@@ -123,6 +131,9 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
