@@ -7,6 +7,7 @@ using System.Reflection;
 using System.IO;
 using Camstar.WCF.ObjectStack;
 using Camstar.WCF.Services;
+using OpcenterWikLibrary;
 
 namespace ExCoreService
 {
@@ -31,7 +32,7 @@ namespace ExCoreService
                 if (!Directory.Exists(AppSettings.OrderBOMErrorFolder)) Directory.CreateDirectory(AppSettings.OrderBOMErrorFolder);
             } catch (Exception ex)
             {
-                EventLogUtil.LogErrorEvent(typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
+                EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
         //Services mode can be: MfgOrder, OrderBOM, MasterProduct
@@ -47,7 +48,7 @@ namespace ExCoreService
                     if (serviceMode == "MfgOrder") bResult = ProcessingFileMfgOrder(sFileName);
                     if (serviceMode == "OrderBOM") bResult = ProcessingFileOrderBOM(sFileName);
                     if (serviceMode == "MasterProduct") bResult = ProcessingFileMasterProduct(sFileName);
-                    EventLogUtil.LogEvent("Completed and success processing file:" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
+                    EventLogUtil.LogEvent("Finish processing file:" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
 
                     // Move the file to either the completed or error depending on result
                     string sDestinationFileName = "";
@@ -72,27 +73,35 @@ namespace ExCoreService
                             try
                             {
                                 File.Move(sFileName, sDestinationFileName);
-                                EventLogUtil.LogEvent("Move " + sFileName + " to " + sDestinationFileName, System.Diagnostics.EventLogEntryType.Information, 3);
                                 // Create an error log file with the last error event log
                                 if (!bResult)
                                 {
                                     StreamWriter oFile = null;
                                     try
                                     {
+                                        string errorMessage = EventLogUtil.LastLogError;
+                                        if (EventLogUtil.LastLogError == null) errorMessage = $"Something wrong when tried to processing File: {sFileName}.\nMove {sFileName} to {sDestinationFileName}";
                                         oFile = new StreamWriter(sDestinationFileName + ".log");
-                                        oFile.WriteLine(EventLogUtil.LastLogError);
+                                        oFile.WriteLine(errorMessage);
+                                        throw new ArgumentException(errorMessage);
                                     }
-                                    catch { }
+                                    catch (Exception ex) 
+                                    {
+                                        EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
+                                    }
                                     finally
                                     {
                                         if (oFile != null) oFile.Close();
                                         if (oFile != null) oFile.Dispose();
                                     }
+                                }else
+                                {
+                                    EventLogUtil.LogEvent("Move " + sFileName + " to " + sDestinationFileName, System.Diagnostics.EventLogEntryType.Information, 3);
                                 }
                             }
                             catch (Exception exFileMoveFailure)
                             {
-                                EventLogUtil.LogErrorEvent(typeof(Program).Assembly.GetName().Name == exFileMoveFailure.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + exFileMoveFailure.Source, exFileMoveFailure);
+                                EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == exFileMoveFailure.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + exFileMoveFailure.Source, exFileMoveFailure);
                             }
                             break;
                         }
@@ -102,7 +111,7 @@ namespace ExCoreService
             }
             catch (Exception ex)
             {
-                EventLogUtil.LogErrorEvent(typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
+                EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
         public bool ProcessingFileMasterProduct(string FileName)
@@ -194,11 +203,10 @@ namespace ExCoreService
                                                     {
                                                         if (routeStep.Sequence != null)
                                                         {
-                                                            if (routeStep.Sequence.Value == OperationNumber[j] && routeStep.Name != null)
+                                                            if (routeStep.Sequence.Value == OperationNumber[j] && routeStep.Name != null && oServiceUtil.CanCovertTo(Qty[j], "System.Double"))
                                                             {
                                                                 cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value) });
                                                                 cMaterialQueueDetails.Add(new isMaterialQueueDetailsChanges() { isProduct = new RevisionedObjectRef(PartRequired[j]), isQty = Convert.ToDouble(Qty[j]), isQtyAvailable = Convert.ToDouble(Qty[j]), isUOM = new NamedObjectRef(AppSettings.DefaultUOM), isRemovalStrategy = isRemovalStrategyEnum.FIFO, isSequence = (j + 1), isConsumedQty = 0, isInventoryLocation = new NamedObjectRef(AppSettings.DefaultInventoryLocation) });
-                                                                //oServiceUtil.SaveManageInventory(oMfgOrder.Name.Value, "Warehouse", PartRequired[j],PartRequired[j], Convert.ToDouble(Qty[j]), "Unit");
                                                             }
                                                         }
                                                     }
@@ -231,7 +239,7 @@ namespace ExCoreService
                 return true;
             } catch(Exception ex)
             {
-                EventLogUtil.LogErrorEvent(typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
+                EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
                 return false;
             }
         }
@@ -258,25 +266,28 @@ namespace ExCoreService
 
             }
             ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
-            OrderStatusMaintService oServiceOrderStstus = new OrderStatusMaintService(AppSettings.ExCoreUserProfile);
-            string sOrderStstus = oServiceUtil.ObjectExists(oServiceOrderStstus, new OrderStatusMaint(), AppSettings.DefaultOrderStatus) == true ? AppSettings.DefaultOrderStatus : "";
+            OrderStatusMaintService oServiceOrderStatus = new OrderStatusMaintService(AppSettings.ExCoreUserProfile);
+            string sOrderStatus = oServiceUtil.ObjectExists(oServiceOrderStatus, new OrderStatusMaint(), AppSettings.DefaultOrderStatus) == true ? AppSettings.DefaultOrderStatus : "";
             for (int i = 0; i < lineCSV.Length - 1; i++)
             {
-                result = oServiceUtil.SaveMfgOrder(ProductionOrder[i], 
-                    "", 
-                    "", 
-                    oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Product[i], "") == true ? Product[i] : "", 
-                    "", 
-                    "", 
-                    "", 
-                    Convert.ToDouble(Qty[i]),
-                    null,
-                    "",
-                    oServiceUtil.IsDate(StartTime[i]) == true ? StartTime[i] : "" ,
-                    oServiceUtil.IsDate(EndTime[i]) == true ? EndTime[i] : "",
-                    "",
-                    sOrderStstus,
-                    true);
+                if (oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Product[i], "") && oServiceUtil.CanCovertTo(Qty[i], "System.Double"))
+                {
+                    result = oServiceUtil.SaveMfgOrder(ProductionOrder[i],
+                        "",
+                        "",
+                        Product[i],
+                        "",
+                        "",
+                        "",
+                        Convert.ToDouble(Qty[i]),
+                        null,
+                        "",
+                        oServiceUtil.IsDate(StartTime[i]) == true ? StartTime[i] : "",
+                        oServiceUtil.IsDate(EndTime[i]) == true ? EndTime[i] : "",
+                        "",
+                        sOrderStatus,
+                        true);
+                }
 
                 if (!result) break;
             }

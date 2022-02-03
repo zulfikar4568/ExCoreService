@@ -81,6 +81,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\InSiteXMLClient.dll</HintPath>
     </Reference>
+    <Reference Include="OpcenterWikLibrary, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\OpcenterWikLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Configuration.Install" />
@@ -102,14 +106,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AppSettings.cs" />
-    <Compile Include="EventLogUtil.cs" />
-    <Compile Include="NetUtil.cs" />
     <Compile Include="ProcessFiles.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServiceUtil.cs" />
-    <Compile Include="Simple3Des.cs" />
     <Compile Include="StreamFile.cs" />
   </ItemGroup>
   <ItemGroup>

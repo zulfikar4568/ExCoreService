@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpcenterWikLibrary;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +14,7 @@ namespace ExCoreService
         {
             var exitCode = HostFactory.Run(x =>
             {
+                AppSettings.AssemblyName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
                 x.Service<StreamFile>(s =>
                 {
                     s.ConstructUsing(streamfile => new StreamFile());

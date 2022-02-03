@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpcenterWikLibrary;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
+
 
 namespace ExCoreService
 {
@@ -30,7 +32,7 @@ namespace ExCoreService
             }
             catch(Exception ex)
             {
-                ex.Source = typeof(Program).Assembly.GetName().Name == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
+                ex.Source = AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source;
                 EventLogUtil.LogErrorEvent(ex.Source, ex);
             }
             finally
