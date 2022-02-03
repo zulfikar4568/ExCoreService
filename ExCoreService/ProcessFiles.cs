@@ -80,10 +80,10 @@ namespace ExCoreService
                                     try
                                     {
                                         string errorMessage = EventLogUtil.LastLogError;
-                                        if (EventLogUtil.LastLogError == null) errorMessage = $"Something wrong when tried to processing File: {sFileName}.\nMove {sFileName} to {sDestinationFileName}";
+                                        if (EventLogUtil.LastLogError == null) errorMessage = $"Something wrong when tried to processing File: {sFileName}.";
                                         oFile = new StreamWriter(sDestinationFileName + ".log");
                                         oFile.WriteLine(errorMessage);
-                                        throw new ArgumentException(errorMessage);
+                                        throw new ArgumentException($"{errorMessage}.\nMove {sFileName} to {sDestinationFileName}");
                                     }
                                     catch (Exception ex) 
                                     {
