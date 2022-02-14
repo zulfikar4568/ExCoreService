@@ -9,7 +9,7 @@ using Camstar.WCF.ObjectStack;
 using Camstar.WCF.Services;
 using OpcenterWikLibrary;
 
-namespace ExCoreServiceOrderBOM
+namespace ExCoreServiceProductMaster
 {
     public class ProcessFiles
     {
@@ -33,7 +33,7 @@ namespace ExCoreServiceOrderBOM
                 {
                     bool bResult = false;
                     EventLogUtil.LogEvent("Processing" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
-                    bResult = ProcessingFileOrderBOM(sFileName);
+                    bResult = ProcessingFileMasterProduct(sFileName);
                     EventLogUtil.LogEvent("Finish processing file:" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
 
                     // Move the file to either the completed or error depending on result

@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{FBA61B5B-0F90-46C1-BDD9-A54473B509C2}</ProjectGuid>
+    <ProjectGuid>{A044C1E5-B5E5-42F0-9B5C-B4A30DC44FFB}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>ExCoreService</RootNamespace>
-    <AssemblyName>ExCoreService</AssemblyName>
+    <RootNamespace>ExCoreServiceOrder</RootNamespace>
+    <AssemblyName>ExCoreServiceOrder</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>C:\Temp\Demos\ExCoreService\</PublishUrl>
+    <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -23,10 +22,10 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>1</ApplicationRevision>
+    <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
-    <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -48,42 +47,24 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <ManifestCertificateThumbprint>16C38612DD7874424C30EF7D9A13E056B5BC1393</ManifestCertificateThumbprint>
-  </PropertyGroup>
-  <PropertyGroup>
-    <ManifestKeyFile>ExCoreService_TemporaryKey.pfx</ManifestKeyFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <GenerateManifests>true</GenerateManifests>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignManifests>true</SignManifests>
-  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Camstar.Exceptions, Version=8.3.7871.22572, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>lib\Camstar.Exceptions.dll</HintPath>
+    <Reference Include="Camstar.Exceptions">
+      <HintPath>..\lib\Camstar.Exceptions.dll</HintPath>
     </Reference>
-    <Reference Include="Camstar.Util, Version=8.3.7871.22572, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>lib\Camstar.Util.dll</HintPath>
+    <Reference Include="Camstar.Util">
+      <HintPath>..\lib\Camstar.Util.dll</HintPath>
     </Reference>
-    <Reference Include="Camstar.WCFClient, Version=8.3.7871.22573, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>lib\Camstar.WCFClient.dll</HintPath>
+    <Reference Include="Camstar.WCFClient">
+      <HintPath>..\lib\Camstar.WCFClient.dll</HintPath>
     </Reference>
-    <Reference Include="Camstar.WCFClientBase, Version=8.3.7871.22573, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>lib\Camstar.WCFClientBase.dll</HintPath>
+    <Reference Include="Camstar.WCFClientBase">
+      <HintPath>..\lib\Camstar.WCFClientBase.dll</HintPath>
     </Reference>
-    <Reference Include="InSiteXMLClient, Version=8.3.7871.22683, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>lib\InSiteXMLClient.dll</HintPath>
+    <Reference Include="InSiteXMLClient">
+      <HintPath>..\lib\InSiteXMLClient.dll</HintPath>
     </Reference>
-    <Reference Include="OpcenterWikLibrary, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>lib\OpcenterWikLibrary.dll</HintPath>
+    <Reference Include="OpcenterWikLibrary">
+      <HintPath>..\lib\OpcenterWikLibrary.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -116,7 +97,6 @@
     <None Include="Endpoints.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="ExCoreService_TemporaryKey.pfx" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -130,9 +110,6 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Topshelf;
 
-namespace ExCoreServiceOrderBOM
+namespace ExCoreServiceOrder
 {
     class Program
     {
@@ -20,16 +20,16 @@ namespace ExCoreServiceOrderBOM
                     s.ConstructUsing(streamfile => new StreamFile());
                     s.WhenStarted(streamfile => {
                         streamfile.Start();
-                        EventLogUtil.LogEvent("ExCoreServiceOrderBOM started successfully", System.Diagnostics.EventLogEntryType.Information, 3);
+                        EventLogUtil.LogEvent("ExCoreServiceOrder started successfully", System.Diagnostics.EventLogEntryType.Information, 3);
                     });
                     s.WhenStopped(streamfile => {
                         streamfile.Stop();
-                        EventLogUtil.LogEvent("ExCoreServiceOrderBOM stopped successfully", System.Diagnostics.EventLogEntryType.Information, 3);
+                        EventLogUtil.LogEvent("ExCoreServiceOrder stopped successfully", System.Diagnostics.EventLogEntryType.Information, 3);
                     });
                 });
                 x.RunAsLocalSystem();
-                x.SetServiceName("ExCoreServiceOrderBOM");
-                x.SetDisplayName("ExCoreServiceOrderBOM");
+                x.SetServiceName("ExCoreServiceOrder");
+                x.SetDisplayName("ExCoreServiceOrder");
                 x.SetDescription("This is service for MES Opcenter Execution Core");
             });
 

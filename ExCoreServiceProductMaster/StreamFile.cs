@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Timers;
 
 
-namespace ExCoreServiceOrderBOM
+namespace ExCoreServiceProductMaster
 {
     public class StreamFile
     {

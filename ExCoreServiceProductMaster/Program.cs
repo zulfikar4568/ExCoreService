@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Topshelf;
 
-namespace ExCoreServiceOrderBOM
+namespace ExCoreServiceProductMaster
 {
     class Program
     {
