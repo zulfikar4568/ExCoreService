@@ -14,22 +14,22 @@ namespace ExCoreServiceProductMaster
         {
             var exitCode = HostFactory.Run(x =>
             {
-                AppSettings.AssemblyName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+                AppSettings.AssemblyName = "3" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
                 x.Service<StreamFile>(s =>
                 {
                     s.ConstructUsing(streamfile => new StreamFile());
                     s.WhenStarted(streamfile => {
                         streamfile.Start();
-                        EventLogUtil.LogEvent("ExCoreServiceOrderBOM started successfully", System.Diagnostics.EventLogEntryType.Information, 3);
+                        EventLogUtil.LogEvent("ExCoreServiceProductMaster started successfully", System.Diagnostics.EventLogEntryType.Information, 3);
                     });
                     s.WhenStopped(streamfile => {
                         streamfile.Stop();
-                        EventLogUtil.LogEvent("ExCoreServiceOrderBOM stopped successfully", System.Diagnostics.EventLogEntryType.Information, 3);
+                        EventLogUtil.LogEvent("ExCoreServiceProductMaster stopped successfully", System.Diagnostics.EventLogEntryType.Information, 3);
                     });
                 });
                 x.RunAsLocalSystem();
-                x.SetServiceName("ExCoreServiceOrderBOM");
-                x.SetDisplayName("ExCoreServiceOrderBOM");
+                x.SetServiceName("ExCoreServiceProductMaster");
+                x.SetDisplayName("ExCoreServiceProductMaster");
                 x.SetDescription("This is service for MES Opcenter Execution Core");
             });
 

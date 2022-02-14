@@ -100,31 +100,6 @@ namespace ExCoreServiceOrderBOM
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
-        public bool ProcessingFileMasterProduct(string FileName)
-        {
-            ServiceUtil oServiceUtil = new ServiceUtil();
-            bool result = false;
-            string[] lineCSV = System.IO.File.ReadAllLines(FileName);
-            var ProductNumber = new List<string>();
-            var Description = new List<string>();
-            var ProductType = new List<string>();
-            List<ProductChanges> oMfgOrders = new List<ProductChanges>();
-
-            for(int i = 1; i < lineCSV.Length; i++)
-            {
-                string[] rowData = lineCSV[i].Split(',');
-                ProductNumber.Add(rowData[0]);
-                Description.Add(rowData[1]);
-                ProductType.Add(rowData[2]);
-            }
-
-            for (int j = 0; j < lineCSV.Length - 1; j++)
-            {
-                result = oServiceUtil.SaveProduct(ProductNumber[j], "1", "", Description[j], "", ProductType[j]);
-                if (!result) break;
-            }
-            return result;
-        }
         public bool ProcessingFileOrderBOM(string FileName)
         {
             // Declare MfgOrder
@@ -228,56 +203,6 @@ namespace ExCoreServiceOrderBOM
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
                 return false;
             }
-        }
-        public bool ProcessingFileMfgOrder(string FileName)
-        {
-            ServiceUtil oServiceUtil = new ServiceUtil();
-            bool result = false;
-            string[] lineCSV = System.IO.File.ReadAllLines(FileName);
-            var ProductionOrder = new List<string>();
-            var Product = new List<string>();
-            var Qty = new List<string>();
-            var StartTime = new List<string>();
-            var EndTime = new List<string>();
-
-
-            for (int i = 1; i < lineCSV.Length; i++)
-            {
-                string[] rowData = lineCSV[i].Split(',');
-                ProductionOrder.Add(rowData[0]);
-                Product.Add(rowData[1]);
-                Qty.Add(rowData[6]);
-                StartTime.Add(rowData[8]);
-                EndTime.Add(rowData[9]);
-
-            }
-            ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
-            OrderStatusMaintService oServiceOrderStatus = new OrderStatusMaintService(AppSettings.ExCoreUserProfile);
-            string sOrderStatus = oServiceUtil.ObjectExists(oServiceOrderStatus, new OrderStatusMaint(), AppSettings.DefaultOrderStatus) == true ? AppSettings.DefaultOrderStatus : "";
-            for (int i = 0; i < lineCSV.Length - 1; i++)
-            {
-                if (oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Product[i], "") && oServiceUtil.CanCovertTo(Qty[i], "System.Double"))
-                {
-                    result = oServiceUtil.SaveMfgOrder(ProductionOrder[i],
-                        "",
-                        "",
-                        Product[i],
-                        "",
-                        "",
-                        "",
-                        Convert.ToDouble(Qty[i]),
-                        null,
-                        "",
-                        oServiceUtil.IsDate(StartTime[i]) == true ? StartTime[i] : "",
-                        oServiceUtil.IsDate(EndTime[i]) == true ? EndTime[i] : "",
-                        "",
-                        sOrderStatus,
-                        true);
-                }
-
-                if (!result) break;
-            }
-            return result;
         }
     }
 }

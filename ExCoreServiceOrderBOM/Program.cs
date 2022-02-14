@@ -14,7 +14,7 @@ namespace ExCoreServiceOrderBOM
         {
             var exitCode = HostFactory.Run(x =>
             {
-                AppSettings.AssemblyName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+                AppSettings.AssemblyName = "2" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
                 x.Service<StreamFile>(s =>
                 {
                     s.ConstructUsing(streamfile => new StreamFile());
