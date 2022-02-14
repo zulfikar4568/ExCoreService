@@ -8,6 +8,7 @@ using System.IO;
 using Camstar.WCF.ObjectStack;
 using Camstar.WCF.Services;
 using OpcenterWikLibrary;
+using System.Configuration;
 
 namespace ExCoreServiceProductMaster
 {
@@ -32,9 +33,10 @@ namespace ExCoreServiceProductMaster
                 // Retrieve file from Source Folder
                 foreach (string sFileName in Directory.GetFiles(sourceFolder, "*.csv"))
                 {
+                    string Message = "";
                     bool bResult = false;
                     EventLogUtil.LogEvent("Processing" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
-                    bResult = ProcessingFileMasterProduct(sFileName);
+                    bResult = ProcessingFileMasterProduct(sFileName, out Message);
                     EventLogUtil.LogEvent("Finish processing file:" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
 
                     // Move the file to either the completed or error depending on result
@@ -67,7 +69,7 @@ namespace ExCoreServiceProductMaster
                                     try
                                     {
                                         string errorMessage = EventLogUtil.LastLogError;
-                                        if (EventLogUtil.LastLogError == null) errorMessage = $"Something wrong when tried to processing File: {sFileName}.";
+                                        if (EventLogUtil.LastLogError == null) errorMessage = $"Something wrong when tried to processing File: {sFileName}. {Message}";
                                         oFile = new StreamWriter(sDestinationFileName + ".log");
                                         oFile.WriteLine(errorMessage);
                                         throw new ArgumentException($"{errorMessage}.\nMove {sFileName} to {sDestinationFileName}");
@@ -102,29 +104,51 @@ namespace ExCoreServiceProductMaster
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
-        public bool ProcessingFileMasterProduct(string FileName)
+        public bool ProcessingFileMasterProduct(string FileName, out string Message)
         {
+            // Declare Variable
+            Message = "";
             ServiceUtil oServiceUtil = new ServiceUtil();
             bool result = false;
-            string[] lineCSV = System.IO.File.ReadAllLines(FileName);
             var ProductNumber = new List<string>();
             var Description = new List<string>();
             var ProductType = new List<string>();
 
-            for (int i = 1; i < lineCSV.Length; i++)
+            try
             {
-                string[] rowData = lineCSV[i].Split(',');
-                ProductNumber.Add(rowData[0]);
-                Description.Add(rowData[1]);
-                ProductType.Add(rowData[2]);
-            }
 
-            for (int j = 0; j < lineCSV.Length - 1; j++)
-            {
-                result = oServiceUtil.SaveProduct(ProductNumber[j], "1", "", Description[j], "", ProductType[j]);
-                if (!result) break;
+                //Read Csv line
+                string[] lineCSV = System.IO.File.ReadAllLines(FileName);
+
+                //Validation
+                if (lineCSV[0].Split(',').Length - 1 != Convert.ToInt32(ConfigurationManager.AppSettings["LengthCSV"]))
+                {
+                    Message = $"The Column CSV have wrong number, make sure the number of column CSV is {ConfigurationManager.AppSettings["LengthCSV"]}";
+                    return false;
+                }
+
+                for (int i = 1; i < lineCSV.Length; i++)
+                {
+                    string[] rowData = lineCSV[i].Split(',');
+                    ProductNumber.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["PO"])]);
+                    Description.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Description"])]);
+                    ProductType.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["ProductType"])]);
+                }
+
+                for (int j = 0; j < lineCSV.Length - 1; j++)
+                {
+                    ProductTypeMaintService oServiceProductType = new ProductTypeMaintService(AppSettings.ExCoreUserProfile);
+                    string sProductType = oServiceUtil.ObjectExists(oServiceProductType, new ProductTypeMaint(), ProductType[j]) == true ? ProductType[j] : "";
+                    result = oServiceUtil.SaveProduct(ProductNumber[j], "1", "", Description[j], "", sProductType);
+                    if (!result) break;
+                }
+                return result;
             }
-            return result;
+            catch (Exception ex)
+            {
+                EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
+                return false;
+            }
         }
     }
 }

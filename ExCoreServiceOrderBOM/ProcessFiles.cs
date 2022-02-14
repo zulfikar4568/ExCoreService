@@ -8,6 +8,7 @@ using System.IO;
 using Camstar.WCF.ObjectStack;
 using Camstar.WCF.Services;
 using OpcenterWikLibrary;
+using System.Configuration;
 
 namespace ExCoreServiceOrderBOM
 {
@@ -31,9 +32,10 @@ namespace ExCoreServiceOrderBOM
                 // Retrieve file from Source Folder
                 foreach (string sFileName in Directory.GetFiles(sourceFolder, "*.csv"))
                 {
+                    string Message = "";
                     bool bResult = false;
                     EventLogUtil.LogEvent("Processing" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
-                    bResult = ProcessingFileOrderBOM(sFileName);
+                    bResult = ProcessingFileOrderBOM(sFileName, out Message);
                     EventLogUtil.LogEvent("Finish processing file:" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
 
                     // Move the file to either the completed or error depending on result
@@ -66,7 +68,7 @@ namespace ExCoreServiceOrderBOM
                                     try
                                     {
                                         string errorMessage = EventLogUtil.LastLogError;
-                                        if (EventLogUtil.LastLogError == null) errorMessage = $"Something wrong when tried to processing File: {sFileName}.";
+                                        if (EventLogUtil.LastLogError == null) errorMessage = $"Something wrong when tried to processing File: {sFileName}. {Message}";
                                         oFile = new StreamWriter(sDestinationFileName + ".log");
                                         oFile.WriteLine(errorMessage);
                                         throw new ArgumentException($"{errorMessage}.\nMove {sFileName} to {sDestinationFileName}");
@@ -100,9 +102,10 @@ namespace ExCoreServiceOrderBOM
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
-        public bool ProcessingFileOrderBOM(string FileName)
+        public bool ProcessingFileOrderBOM(string FileName, out string Message)
         {
-            // Declare MfgOrder
+            // Declare Variable
+            Message = "";
             ServiceUtil oServiceUtil = new ServiceUtil();
             bool resultMfgOrder = false;
             bool resultQueue = false;
@@ -115,14 +118,23 @@ namespace ExCoreServiceOrderBOM
             {
                 //Read Csv line
                 string[] lineCSV = System.IO.File.ReadAllLines(FileName);
+
+                //Validation
+                if (lineCSV[0].Split(',').Length - 1 != Convert.ToInt32(ConfigurationManager.AppSettings["LengthCSV"]))
+                {
+                    Message = $"The Column CSV have wrong number, make sure the number of column CSV is {ConfigurationManager.AppSettings["LengthCSV"]}";
+                    return false;
+                }
+
                 for (int i = 1; i < lineCSV.Length; i++)
                 {
                     string[] rowData = lineCSV[i].Split(',');
-                    ProductionOrder.Add(rowData[0]);
-                    OperationNumber.Add(rowData[1]);
-                    PartRequired.Add(rowData[2]);
-                    Qty.Add(rowData[3]);
+                    ProductionOrder.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["PO"])]);
+                    OperationNumber.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["OperationNumber"])]);
+                    PartRequired.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["PartRequired"])]);
+                    Qty.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Qty"])]);
                 }
+
                 foreach (var filteredMfgOrder in ProductionOrder.Distinct().ToList())
                 {
                     MfgOrderChanges getMfgOrder = oServiceUtil.GetMfgOrder(filteredMfgOrder);

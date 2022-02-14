@@ -8,6 +8,7 @@ using System.IO;
 using Camstar.WCF.ObjectStack;
 using Camstar.WCF.Services;
 using OpcenterWikLibrary;
+using System.Configuration;
 
 namespace ExCoreServiceOrder
 {
@@ -31,9 +32,10 @@ namespace ExCoreServiceOrder
                 // Retrieve file from Source Folder
                 foreach (string sFileName in Directory.GetFiles(sourceFolder, "*.csv"))
                 {
+                    string Message = "";
                     bool bResult = false;
                     EventLogUtil.LogEvent("Processing" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
-                    bResult = ProcessingFileMfgOrder(sFileName);
+                    bResult = ProcessingFileMfgOrder(sFileName, out Message);
                     EventLogUtil.LogEvent("Finish processing file:" + sFileName, System.Diagnostics.EventLogEntryType.Information, 3);
 
                     // Move the file to either the completed or error depending on result
@@ -66,7 +68,7 @@ namespace ExCoreServiceOrder
                                     try
                                     {
                                         string errorMessage = EventLogUtil.LastLogError;
-                                        if (EventLogUtil.LastLogError == null) errorMessage = $"Something wrong when tried to processing File: {sFileName}.";
+                                        if (EventLogUtil.LastLogError == null) errorMessage = $"Something wrong when tried to processing File: {sFileName}. {Message}";
                                         oFile = new StreamWriter(sDestinationFileName + ".log");
                                         oFile.WriteLine(errorMessage);
                                         throw new ArgumentException($"{errorMessage}.\nMove {sFileName} to {sDestinationFileName}");
@@ -100,55 +102,70 @@ namespace ExCoreServiceOrder
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
-        public bool ProcessingFileMfgOrder(string FileName)
+        public bool ProcessingFileMfgOrder(string FileName, out string Message)
         {
+            Message = "";
             ServiceUtil oServiceUtil = new ServiceUtil();
             bool result = false;
-            string[] lineCSV = System.IO.File.ReadAllLines(FileName);
             var ProductionOrder = new List<string>();
             var Product = new List<string>();
             var Qty = new List<string>();
             var StartTime = new List<string>();
             var EndTime = new List<string>();
 
-
-            for (int i = 1; i < lineCSV.Length; i++)
+            try
             {
-                string[] rowData = lineCSV[i].Split(',');
-                ProductionOrder.Add(rowData[0]);
-                Product.Add(rowData[1]);
-                Qty.Add(rowData[6]);
-                StartTime.Add(rowData[8]);
-                EndTime.Add(rowData[9]);
-
-            }
-            ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
-            OrderStatusMaintService oServiceOrderStatus = new OrderStatusMaintService(AppSettings.ExCoreUserProfile);
-            string sOrderStatus = oServiceUtil.ObjectExists(oServiceOrderStatus, new OrderStatusMaint(), AppSettings.DefaultOrderStatus) == true ? AppSettings.DefaultOrderStatus : "";
-            for (int i = 0; i < lineCSV.Length - 1; i++)
-            {
-                if (oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Product[i], "") && oServiceUtil.CanCovertTo(Qty[i], "System.Double"))
+                string[] lineCSV = System.IO.File.ReadAllLines(FileName);
+                //Validation
+                if (lineCSV[0].Split(',').Length - 1 != Convert.ToInt32(ConfigurationManager.AppSettings["LengthCSV"]))
                 {
-                    result = oServiceUtil.SaveMfgOrder(ProductionOrder[i],
-                        "",
-                        "",
-                        Product[i],
-                        "",
-                        "",
-                        "",
-                        Convert.ToDouble(Qty[i]),
-                        null,
-                        "",
-                        oServiceUtil.IsDate(StartTime[i]) == true ? StartTime[i] : "",
-                        oServiceUtil.IsDate(EndTime[i]) == true ? EndTime[i] : "",
-                        "",
-                        sOrderStatus,
-                        true);
+                    Message = $"The Column CSV have wrong number, make sure the number of column CSV is {ConfigurationManager.AppSettings["LengthCSV"]}";
+                    return false;
                 }
 
-                if (!result) break;
+                for (int i = 1; i < lineCSV.Length; i++)
+                {
+                    string[] rowData = lineCSV[i].Split(',');
+                    ProductionOrder.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["PO"])]);
+                    Product.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Product"])]);
+                    Qty.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Qty"])]);
+                    StartTime.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["StartTime"])]);
+                    EndTime.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["EndTime"])]);
+
+                }
+                ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
+                OrderStatusMaintService oServiceOrderStatus = new OrderStatusMaintService(AppSettings.ExCoreUserProfile);
+                string sOrderStatus = oServiceUtil.ObjectExists(oServiceOrderStatus, new OrderStatusMaint(), AppSettings.DefaultOrderStatus) == true ? AppSettings.DefaultOrderStatus : "";
+                for (int i = 0; i < lineCSV.Length - 1; i++)
+                {
+                    if (oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Product[i], "") && oServiceUtil.CanCovertTo(Qty[i], "System.Double"))
+                    {
+                        result = oServiceUtil.SaveMfgOrder(ProductionOrder[i],
+                            "",
+                            "",
+                            Product[i],
+                            "",
+                            "",
+                            "",
+                            Convert.ToDouble(Qty[i]),
+                            null,
+                            "",
+                            oServiceUtil.IsDate(StartTime[i]) == true ? StartTime[i] : "",
+                            oServiceUtil.IsDate(EndTime[i]) == true ? EndTime[i] : "",
+                            "",
+                            sOrderStatus,
+                            true);
+                    }
+
+                    if (!result) break;
+                }
+                return result;
             }
-            return result;
+            catch (Exception ex)
+            {
+                EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
+                return false;
+            }
         }
     }
 }
