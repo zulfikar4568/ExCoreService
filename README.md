@@ -45,18 +45,25 @@ Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\EventLog\Security
 
 # Documentation API
 - [Service Util API](./ExCoreService/README.md)
-# How deploy this service
-- Copy all files in /bin/debug/ to somewhere else folder
-- Open CMD as Administrator write for example 
+# How deploy the service
+Run as Administrator the file `InstallServices.cmd`. And Copy the folder path for each Services 1 by 1 per service, for example:
 ```
-$ cd C:\Temp\Released Application\ExCoreService
-$ dir
-$ ExCoreService.exe install start
-$ ExCoreService.exe uninstall
+Where's the path Installer File of ExCoreServiceOrder: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceOrder\bin\Release
+Where's the path Installer File of ExCoreServiceOrderBOM: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceOrderBOM\bin\Release
+Where's the path Installer File of ExCoreServiceProductMaster: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceProductMaster\bin\Release
+```
+# How uninstall the service
+Run as Administrator the file `UninstallServices.cmd`. And Copy the folder path for each Services 1 by 1 per service, for example:
+for example:
+```
+Where's the path Installer File of ExCoreServiceOrder: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceOrder\bin\Release
+Where's the path Installer File of ExCoreServiceOrderBOM: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceOrderBOM\bin\Release
+Where's the path Installer File of ExCoreServiceProductMaster: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceProductMaster\bin\Release
 ```
 # Released Notes
 - [v1.0.1](https://github.com/zulfikar4568/ExCoreService/releases/tag/v1.0.1) Import Order BOM (Material List) and Order (Production Order)
 - [v1.0.2](https://github.com/zulfikar4568/ExCoreService/releases/tag/v1.0.2) Fixing Bug (Order BOM import Error When Route Steps Sequence is null)
+- [v1.0.3](https://github.com/zulfikar4568/ExCoreService/releases/tag/v1.0.3) Add validation field CSV, Field can be configured from the config, Service created separately,Service Migrate to Library
 
 # License & Copy Right
 © M. Zulfikar Isnaen, This is Under [MIT License](LICENSE).
