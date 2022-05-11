@@ -33,22 +33,28 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Camstar.Exceptions">
+    <Reference Include="Camstar.Exceptions, Version=8.3.7871.22572, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\Camstar.Exceptions.dll</HintPath>
     </Reference>
-    <Reference Include="Camstar.Util">
+    <Reference Include="Camstar.Util, Version=8.3.7871.22572, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\Camstar.Util.dll</HintPath>
     </Reference>
-    <Reference Include="Camstar.WCFClient">
+    <Reference Include="Camstar.WCFClient, Version=8.3.7871.22573, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\Camstar.WCFClient.dll</HintPath>
     </Reference>
-    <Reference Include="Camstar.WCFClientBase">
+    <Reference Include="Camstar.WCFClientBase, Version=8.3.7871.22573, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\Camstar.WCFClientBase.dll</HintPath>
     </Reference>
-    <Reference Include="InSiteXMLClient">
+    <Reference Include="InSiteXMLClient, Version=8.3.7871.22683, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\InSiteXMLClient.dll</HintPath>
     </Reference>
-    <Reference Include="OpcenterWikLibrary">
+    <Reference Include="OpcenterWikLibrary, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\OpcenterWikLibrary.dll</HintPath>
     </Reference>
     <Reference Include="System" />

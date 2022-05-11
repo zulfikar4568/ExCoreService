@@ -25,13 +25,41 @@ namespace ExCoreServiceOrder
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
-        //Services mode can be: MfgOrder, OrderBOM, MasterProduct
-        public void ProcessingFile(string sourceFolder, string completedFolder, string errorFolder)
+
+        public async void QueuingFiles(string sourceFolder, string queueFolder, string completedFolder, string errorFolder, string referenceFolder = "")
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    if (referenceFolder != "") if (Directory.GetFiles(referenceFolder, "*.csv").Length > 0) throw new ArgumentException($"There's file on folder {referenceFolder}. Please complete or clean this folder first before continue import Order BOM!");
+                    if (Directory.GetFiles(sourceFolder, "*.csv").Length > 0)
+                    {
+                        string uniqueFolder = $"{queueFolder}\\{Guid.NewGuid()}";
+                        Directory.CreateDirectory(uniqueFolder);
+                        if (Directory.Exists(uniqueFolder))
+                        {
+                            foreach (string sFileName in Directory.GetFiles(sourceFolder, "*.csv"))
+                            {
+                                string sDestinationFileName = uniqueFolder + "\\" + System.IO.Path.GetFileName(sFileName);
+                                if (!File.Exists(sDestinationFileName)) File.Move(sFileName, sDestinationFileName);
+                            }
+                        }
+                        ProcessingFile(uniqueFolder, completedFolder, errorFolder);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
+                }
+            });
+        }
+        public void ProcessingFile(string uniqueQueueFolder, string completedFolder, string errorFolder)
         {
             try
             {
                 // Retrieve file from Source Folder
-                foreach (string sFileName in Directory.GetFiles(sourceFolder, "*.csv"))
+                foreach (string sFileName in Directory.GetFiles(uniqueQueueFolder, "*.csv"))
                 {
                     string Message = "";
                     bool bResult = false;
@@ -45,18 +73,9 @@ namespace ExCoreServiceOrder
                     string sFileExt = sFileName.Substring(sFileName.LastIndexOf(".")); //Get File Extension
                     while (true)
                     {
-                        if (bResult)
-                        {
-                            sDestinationFileName = completedFolder + "\\" + System.IO.Path.GetFileName(sFileName);
-                        }
-                        else
-                        {
-                            sDestinationFileName = errorFolder + "\\" + System.IO.Path.GetFileName(sFileName);
-                        }
-                        if (iFileNo > 0)
-                        {
-                            sDestinationFileName = sDestinationFileName.Substring(0, sDestinationFileName.Length - sFileExt.Length) + " (" + iFileNo.ToString() + ") " + sDestinationFileName.Substring(sDestinationFileName.Length - sFileExt.Length, sFileExt.Length);
-                        }
+                        if (bResult) sDestinationFileName = completedFolder + "\\" + System.IO.Path.GetFileName(sFileName);
+                        else sDestinationFileName = errorFolder + "\\" + System.IO.Path.GetFileName(sFileName);
+                        if (iFileNo > 0)sDestinationFileName = sDestinationFileName.Substring(0, sDestinationFileName.Length - sFileExt.Length) + " (" + iFileNo.ToString() + ") " + sDestinationFileName.Substring(sDestinationFileName.Length - sFileExt.Length, sFileExt.Length);
                         if (!File.Exists(sDestinationFileName))
                         {
                             try
@@ -83,7 +102,7 @@ namespace ExCoreServiceOrder
                                         if (oFile != null) oFile.Close();
                                         if (oFile != null) oFile.Dispose();
                                     }
-                                }else
+                                } else
                                 {
                                     EventLogUtil.LogEvent(Message + "  Move " + sFileName + " to " + sDestinationFileName, System.Diagnostics.EventLogEntryType.Information, 3);
                                 }
@@ -97,13 +116,14 @@ namespace ExCoreServiceOrder
                         iFileNo = iFileNo + 1;
                     }
                 }
+                if (Directory.Exists(uniqueQueueFolder)) Directory.Delete(uniqueQueueFolder);
             }
             catch (Exception ex)
             {
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
-        private static string[] SmartSplit(string line, char separator = ',')
+        private string[] SmartSplit(string line, char separator = ',')
         {
             if (line.Contains(';')) separator = ';';
             var inQuotes = false;
@@ -171,7 +191,7 @@ namespace ExCoreServiceOrder
                 {
                     string[] rowData = SmartSplit(lineCSV[i], ',');
                     MfgLine.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["WorkCenter"])]);
-                    MfgOrder.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Order"])]);
+                    MfgOrder.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Order"])].TrimStart('0'));
                     Product.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Material"])]);
                     OrderType.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["OrderType"])]);
                     Qty.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["TargetQty"])]);
@@ -256,6 +276,7 @@ namespace ExCoreServiceOrder
                         if (sMfgLineChecked != "") oServiceUtil.SaveMfgLine(sMfgLineChecked);
                         if (oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Product[i], ""))
                         {
+                            Console.WriteLine($"{i}. - {MfgOrder[i]} - {Product[i]} - {number} - { StartTime[i]} - {EndTime[i]} - {OrderStatus[i]} - {OrderType[i]} - {MfgLine[i]}");
                             result = oServiceUtil.SaveMfgOrder(MfgOrder[i],
                                 "",
                                 "",
@@ -273,7 +294,7 @@ namespace ExCoreServiceOrder
                                 null,
                                 sOrderTypeChecked,
                                 sMfgLineChecked,
-                                true);
+                                false);
                             if (!result)
                             {
                                 bStatus = false;

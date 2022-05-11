@@ -9,6 +9,7 @@ using Camstar.WCF.ObjectStack;
 using Camstar.WCF.Services;
 using OpcenterWikLibrary;
 using System.Configuration;
+using System.Globalization;
 
 namespace ExCoreServiceOrderBOM
 {
@@ -24,13 +25,42 @@ namespace ExCoreServiceOrderBOM
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
-        //Services mode can be: MfgOrder, OrderBOM, MasterProduct
-        public void ProcessingFile(string sourceFolder, string completedFolder, string errorFolder)
+
+        public async void QueuingFiles(string sourceFolder, string queueFolder, string completedFolder, string errorFolder, string referenceFolder = "")
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    if (referenceFolder != "") if (Directory.GetFiles(referenceFolder, "*.csv").Length > 0) throw new ArgumentException($"There's file on folder {referenceFolder}. Please complete or clean this folder first before continue import Order BOM!");
+                    if (Directory.GetFiles(sourceFolder, "*.csv").Length > 0)
+                    {
+                        string uniqueFolder = $"{queueFolder}\\{Guid.NewGuid()}";
+                        Directory.CreateDirectory(uniqueFolder);
+                        if (Directory.Exists(uniqueFolder))
+                        {
+                            foreach (string sFileName in Directory.GetFiles(sourceFolder, "*.csv"))
+                            {
+                                string sDestinationFileName = uniqueFolder + "\\" + System.IO.Path.GetFileName(sFileName);
+                                if (!File.Exists(sDestinationFileName)) File.Move(sFileName, sDestinationFileName);
+                            }
+                        }
+                        ProcessingFile(uniqueFolder, completedFolder, errorFolder);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
+                }
+            });
+        }
+
+        public void ProcessingFile(string uniqueQueueFolder, string completedFolder, string errorFolder)
         {
             try
             {
                 // Retrieve file from Source Folder
-                foreach (string sFileName in Directory.GetFiles(sourceFolder, "*.csv"))
+                foreach (string sFileName in Directory.GetFiles(uniqueQueueFolder, "*.csv"))
                 {
                     string Message = "";
                     bool bResult = false;
@@ -44,18 +74,9 @@ namespace ExCoreServiceOrderBOM
                     string sFileExt = sFileName.Substring(sFileName.LastIndexOf(".")); //Get File Extension
                     while (true)
                     {
-                        if (bResult)
-                        {
-                            sDestinationFileName = completedFolder + "\\" + System.IO.Path.GetFileName(sFileName);
-                        }
-                        else
-                        {
-                            sDestinationFileName = errorFolder + "\\" + System.IO.Path.GetFileName(sFileName);
-                        }
-                        if (iFileNo > 0)
-                        {
-                            sDestinationFileName = sDestinationFileName.Substring(0, sDestinationFileName.Length - sFileExt.Length) + " (" + iFileNo.ToString() + ") " + sDestinationFileName.Substring(sDestinationFileName.Length - sFileExt.Length, sFileExt.Length);
-                        }
+                        if (bResult) sDestinationFileName = completedFolder + "\\" + System.IO.Path.GetFileName(sFileName);
+                        else sDestinationFileName = errorFolder + "\\" + System.IO.Path.GetFileName(sFileName);
+                        if (iFileNo > 0) sDestinationFileName = sDestinationFileName.Substring(0, sDestinationFileName.Length - sFileExt.Length) + " (" + iFileNo.ToString() + ") " + sDestinationFileName.Substring(sDestinationFileName.Length - sFileExt.Length, sFileExt.Length);
                         if (!File.Exists(sDestinationFileName))
                         {
                             try
@@ -96,31 +117,91 @@ namespace ExCoreServiceOrderBOM
                         iFileNo = iFileNo + 1;
                     }
                 }
+                if (Directory.Exists(uniqueQueueFolder)) Directory.Delete(uniqueQueueFolder);
             }
             catch (Exception ex)
             {
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
+        private bool ConvertToDoubleCommaDecimal(string value, out double result)
+        {
+            CultureInfo provider = new CultureInfo("en-US");
+            NumberStyles styles = NumberStyles.Integer | NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands;
+            bool status = double.TryParse(value, styles, provider, out result);
+            return status;
+        }
+        private string[] SmartSplit(string line, char separator = ',')
+        {
+            if (line.Contains(';')) separator = ';';
+            var inQuotes = false;
+            var token = "";
+            var lines = new List<string>();
+            for (var i = 0; i < line.Length; i++)
+            {
+                var ch = line[i];
+                if (inQuotes) // process string in quotes, 
+                {
+                    if (ch == '"')
+                    {
+                        if (i < line.Length - 1 && line[i + 1] == '"')
+                        {
+                            i++;
+                            token += '"';
+                        }
+                        else inQuotes = false;
+                    }
+                    else token += ch;
+                }
+                else
+                {
+                    if (ch == '"') inQuotes = true;
+                    else if (ch == separator)
+                    {
+                        lines.Add(token);
+                        token = "";
+                    }
+                    else token += ch;
+                }
+            }
+            lines.Add(token);
+            return lines.ToArray();
+        }
         public bool ProcessingFileOrderBOM(string FileName, out string Message)
         {
             // Declare Variable
             Message = "";
             ServiceUtil oServiceUtil = new ServiceUtil();
-            bool resultMfgOrder = false;
-            bool resultQueue = false;
             var ProductionOrder = new List<string>();
-            var OperationNumber = new List<string>();
-            var PartRequired = new List<string>();
+            var Scanning = new List<string>();
+            var MaterialGroup = new List<string>();
+            var Material = new List<string>();
             var Qty= new List<string>();
             List<MfgOrderChanges> oMfgOrders = new List<MfgOrderChanges>();
+
+            string[] PPAFilter = ConfigurationManager.AppSettings["PPAFilter"].Split(',');
+            string ScanningFilter = ConfigurationManager.AppSettings["ScanningFilter"].ToString();
+            string DefaultOperationNumber = ConfigurationManager.AppSettings["DefaultOperationNumber"].ToString();
+            string OperationNumber = DefaultOperationNumber;
+            string DefaultProductDesc = ConfigurationManager.AppSettings["DefaultProductDesc"].ToString();
+            string DefaultProductType = ConfigurationManager.AppSettings["DefaultProductType"].ToString();
+            try
+            {
+                ProductTypeMaintService oServiceProduct = new ProductTypeMaintService(AppSettings.ExCoreUserProfile);
+                bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductTypeMaint(), DefaultProductType);
+                if (!ObjectExists) oServiceUtil.SaveProductType(DefaultProductType);
+            }
+            catch (Exception ex)
+            {
+                EventLogUtil.LogEvent(ex.Message, System.Diagnostics.EventLogEntryType.Warning, 3);
+            }
+
             try
             {
                 //Read Csv line
                 string[] lineCSV = System.IO.File.ReadAllLines(FileName);
-
                 //Validation
-                if (lineCSV[0].Split(',').Length - 1 != Convert.ToInt32(ConfigurationManager.AppSettings["LengthCSV"]))
+                if (SmartSplit(lineCSV[0], ',').Length - 1 != Convert.ToInt32(ConfigurationManager.AppSettings["LengthCSV"]))
                 {
                     Message = $"The Column CSV have wrong number, make sure the number of column CSV is {ConfigurationManager.AppSettings["LengthCSV"]}";
                     return false;
@@ -128,91 +209,88 @@ namespace ExCoreServiceOrderBOM
 
                 for (int i = 1; i < lineCSV.Length; i++)
                 {
-                    string[] rowData = lineCSV[i].Split(',');
-                    ProductionOrder.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["PO"])]);
-                    OperationNumber.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["OperationNumber"])]);
-                    PartRequired.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["PartRequired"])]);
+                    string[] rowData = SmartSplit(lineCSV[i], ',');
+                    ProductionOrder.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["PO"])].TrimStart('0'));
+                    Scanning.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Scanning"])]);
+                    MaterialGroup.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["MaterialGroup"])]);
+                    Material.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Material"])]);
                     Qty.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Qty"])]);
                 }
 
-                foreach (var filteredMfgOrder in ProductionOrder.Distinct().ToList())
+                NamedObjectRef[] getMfgOrderList = oServiceUtil.GetListMfgOrder();
+                string[] sListtMfgOrder = getMfgOrderList.Where(x => x != null).Select(x => x.Name.ToString()).ToArray();
+                string[] mergeMfgOrder = sListtMfgOrder.Intersect(ProductionOrder.Distinct().ToList()).ToArray();
+                foreach (var oMfgOrder in mergeMfgOrder)
                 {
-                    MfgOrderChanges getMfgOrder = oServiceUtil.GetMfgOrder(filteredMfgOrder);
+                    MfgOrderChanges getMfgOrder = oServiceUtil.GetMfgOrder(oMfgOrder);
                     if (getMfgOrder != null)
                     {
+                        Console.WriteLine($"Ada {getMfgOrder.Name}");
                         oMfgOrders.Add(getMfgOrder);
                     }
                     else
                     {
-                        EventLogUtil.LogEvent($"Production or Manufacturing Order: {filteredMfgOrder} is not found!", System.Diagnostics.EventLogEntryType.Warning, 3);
+                        EventLogUtil.LogEvent($"Production or Manufacturing Order: {oMfgOrder} is not found!", System.Diagnostics.EventLogEntryType.Warning, 3);
                     }
                 }
                 foreach (var oMfgOrder in oMfgOrders)
                 {
-                    isMaterialQueueMaintService oQueueService = new isMaterialQueueMaintService(AppSettings.ExCoreUserProfile);
-                    bool bQueueExists = oServiceUtil.ObjectExists(oQueueService, new isMaterialQueueMaint(), oMfgOrder.Name.Value);
+                    Console.WriteLine($"Still in Processs !!!!!! {oMfgOrder.Name}");
                     ERPRouteChanges oERPRoute = oServiceUtil.GetERPRouteFromMfgOrder(oMfgOrder);
-                    if (oERPRoute != null)
+                    if (oERPRoute == null) continue;
+                    if (oMfgOrder.Qty == null && oMfgOrder.Containers != null)
                     {
-                        if (bQueueExists)
+                        EventLogUtil.LogEvent($"Production or Manufacturing Order: {oMfgOrder.Name.Value} can't be used, it might be Production Order have a Container or doesn't have Qty!.\nTry to remove this {oMfgOrder.Name.Value} data on material list.", System.Diagnostics.EventLogEntryType.Warning, 3);
+                        continue;
+                    }
+                    List<dynamic> cMaterialList = new List<dynamic>();
+                    for (int j = 0; j < lineCSV.Length - 1; j++)
+                    {
+                        double number;
+                        if (oMfgOrder.Name.ToString() != ProductionOrder[j]) continue;
+                        if (!ConvertToDoubleCommaDecimal(Qty[j], out number)) continue;
+                        if (Scanning[j] != ScanningFilter) continue;
+                        if (PPAFilter.Length > 0)
                         {
-                            if (oMfgOrder.Qty != null && oMfgOrder.Containers == null)
+                            foreach (var item in PPAFilter)
                             {
-                                List<dynamic> cMaterialList = new List<dynamic>();
-                                List<dynamic> cMaterialQueueDetails = new List<dynamic>();
-                                int iSequence = 0;
-                                for (int j = 0; j < lineCSV.Length - 1; j++)
+                                if (MaterialGroup[j].Contains(item))
                                 {
-                                    if (oMfgOrder.Name.ToString() == ProductionOrder[j])
-                                    {
-                                        ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
-                                        bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), PartRequired[j], "");
-                                        if (ObjectExists)
-                                        {
-                                            iSequence++;
-                                            if (oERPRoute.RouteSteps != null)
-                                            {
-                                                if (oERPRoute.RouteSteps.Length > 0)
-                                                {
-                                                    foreach (var routeStep in oERPRoute.RouteSteps)
-                                                    {
-                                                        if (routeStep.Sequence != null)
-                                                        {
-                                                            if (routeStep.Sequence.Value == OperationNumber[j] && routeStep.Name != null && oServiceUtil.CanCovertTo(Qty[j], "System.Double"))
-                                                            {
-                                                                cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(PartRequired[j]), QtyRequired = Convert.ToDouble(Qty[j]) / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value) });
-                                                                cMaterialQueueDetails.Add(new isMaterialQueueDetailsChanges() { isProduct = new RevisionedObjectRef(PartRequired[j]), isQty = Convert.ToDouble(Qty[j]), isQtyAvailable = Convert.ToDouble(Qty[j]), isUOM = new NamedObjectRef(AppSettings.DefaultUOM), isRemovalStrategy = isRemovalStrategyEnum.FIFO, isSequence = iSequence, isConsumedQty = 0, isInventoryLocation = new NamedObjectRef(AppSettings.DefaultInventoryLocation) });
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            else
-                                            {
-                                                EventLogUtil.LogEvent($"ERP Route: {oERPRoute.Name.Value} doesn't have routeSteps!. Material will included when updated!", System.Diagnostics.EventLogEntryType.Warning, 3);
-                                            }
-                                        }
-                                        //Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber[j]} | {PartRequired[j]} | {Qty[j]}");
-                                    }else
-                                    {
-                                        iSequence = 0;
-                                    }
+                                    OperationNumber = "2";
+                                    break;
+                                } else
+                                {
+                                    OperationNumber = DefaultOperationNumber;
                                 }
-                                resultQueue = oServiceUtil.SaveManageQueue(oMfgOrder.Name.ToString(), oMfgOrder.Name.ToString(), cMaterialQueueDetails);
-                                resultMfgOrder = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, cMaterialList, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
-                                if (!resultMfgOrder) throw new ArgumentException($"Something wrong when tried to update Manufacturing or Production Order: {oMfgOrder.Name.Value}.\nThe {oMfgOrder.Name.Value} data is the cause of error, try to remove this {oMfgOrder.Name.Value} data on order BOM list.");
-                                if (!resultQueue) throw new ArgumentException($"Something wrong when tried to update Queue: {oMfgOrder.Name.Value}.\nThe {oMfgOrder.Name.Value} data is the cause of error, try to remove this {oMfgOrder.Name.Value} data on order BOM list.");
                             }
-                            else
+                        }
+                        ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
+                        bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Material[j], "");
+                        if (!ObjectExists)
+                        {
+                            oServiceUtil.SaveProductFamily(MaterialGroup[j]);
+                            oServiceUtil.SaveProduct(Material[j], "1", "", DefaultProductDesc, "", DefaultProductType, "", "", "", "", "", MaterialGroup[j]);
+                        }
+                        if (oERPRoute.RouteSteps != null)
+                        {
+                            if (oERPRoute.RouteSteps.Length == 0) continue;
+                            foreach (var routeStep in oERPRoute.RouteSteps)
                             {
-                                EventLogUtil.LogEvent($"Production or Manufacturing Order: {oMfgOrder.Name.Value} can't be used, it might be Production Order have a Container or doesn't have Qty!.\nTry to remove this {oMfgOrder.Name.Value} data on material list.", System.Diagnostics.EventLogEntryType.Warning, 3);
+                                if (routeStep.Sequence == null) continue;
+                                if (routeStep.Sequence.Value == OperationNumber && routeStep.Name != null)
+                                {
+                                    cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(Material[j]), QtyRequired = number / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value), wikScanning = new Primitive<string>() { Value = Scanning[j] }});
+                                    Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber} | {Material[j]} | {number}");
+                                }
                             }
                         }
                         else
                         {
-                            EventLogUtil.LogEvent($"Production or Manufacturing Order: {oMfgOrder.Name.Value} can't be used, this {oMfgOrder.Name.Value} doesn't have Queue.\nTry to remove this {oMfgOrder.Name.Value} data on material list.", System.Diagnostics.EventLogEntryType.Warning, 3);
+                            EventLogUtil.LogEvent($"ERP Route: {oERPRoute.Name.Value} doesn't have routeSteps!. Material will included when updated!", System.Diagnostics.EventLogEntryType.Warning, 3);
                         }
                     }
+                    bool resultMfgOrder = oServiceUtil.SaveMfgOrder(oMfgOrder.Name.ToString(), "", "", "", "", "", "", 0, cMaterialList, oERPRoute.Name != null ? oERPRoute.Name.Value : "");
+                    if (!resultMfgOrder) throw new ArgumentException($"Something wrong when tried to update Manufacturing or Production Order: {oMfgOrder.Name.Value}.\nThe {oMfgOrder.Name.Value} data is the cause of error, try to remove this {oMfgOrder.Name.Value} data on order BOM list.");
                 }
                 return true;
             } catch(Exception ex)
