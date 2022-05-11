@@ -27,7 +27,7 @@ IF EXIST %~dp0%ExCoreServiceOrderLocation%\NUL (
   echo(
   cd %~dp0%ExCoreServiceOrderLocation%
   ExCoreServiceOrder.exe uninstall
-  call :ColorText 0a "                                            Install Finished" && <nul set /p=":)"
+  call :ColorText 0a "                                            Uninstall Finished" && <nul set /p=":)"
   echo(
 ) else (
   call :ColorText 0C "                                             Folder not found" && <nul set /p=":("
@@ -42,7 +42,7 @@ IF EXIST %~dp0%ExCoreServiceOrderBOMLocation%\NUL (
   echo(
   cd %~dp0%ExCoreServiceOrderBOMLocation%
   ExCoreServiceOrderBOM.exe uninstall
-  call :ColorText 0a "                                            Install Finished" && <nul set /p=":)"
+  call :ColorText 0a "                                            Uninstall Finished" && <nul set /p=":)"
   echo(
 ) else (
   call :ColorText 0C "                                             Folder not found" && <nul set /p=":("
@@ -57,7 +57,7 @@ IF EXIST %~dp0%ExCoreServiceProductMasterLocation%\NUL (
   echo(
   cd %~dp0%ExCoreServiceProductMasterLocation%
   ExCoreServiceProductMaster.exe uninstall
-  call :ColorText 0a "                                            Install Finished" && <nul set /p=":)"
+  call :ColorText 0a "                                            Uninstall Finished" && <nul set /p=":)"
   echo(
 ) else (
   call :ColorText 0C "                                             Folder not found" && <nul set /p=":("

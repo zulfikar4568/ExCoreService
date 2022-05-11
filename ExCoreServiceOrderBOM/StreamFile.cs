@@ -26,8 +26,8 @@ namespace ExCoreServiceOrderBOM
             try
             {
                 _timer.Stop();
-                ProcessFiles oProcessFiles = new ProcessFiles();
-                oProcessFiles.ProcessingFile(AppSettings.SourceFolder, AppSettings.CompletedFolder, AppSettings.ErrorFolder);
+                ProcessFiles processFiles = new ProcessFiles();
+                processFiles.QueuingFiles(AppSettings.SourceFolder, AppSettings.QueueFolder, AppSettings.CompletedFolder, AppSettings.ErrorFolder, AppSettings.ReferenceFolder);
             }
             catch(Exception ex)
             {
