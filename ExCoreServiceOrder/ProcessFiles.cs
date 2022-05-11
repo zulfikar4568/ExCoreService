@@ -10,6 +10,8 @@ using Camstar.WCF.Services;
 using OpcenterWikLibrary;
 using System.Configuration;
 using System.Globalization;
+using CsvHelper.Configuration;
+using CsvHelper;
 
 namespace ExCoreServiceOrder
 {
@@ -187,19 +189,30 @@ namespace ExCoreServiceOrder
                     return false;
                 }
 
-                for (int i = 1; i < lineCSV.Length; i++)
+                //Read Csv line
+                var configuration = new CsvConfiguration(CultureInfo.InvariantCulture)
                 {
-                    string[] rowData = SmartSplit(lineCSV[i], ',');
-                    MfgLine.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["WorkCenter"])]);
-                    MfgOrder.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Order"])].TrimStart('0'));
-                    Product.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Material"])]);
-                    OrderType.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["OrderType"])]);
-                    Qty.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["TargetQty"])]);
-                    StartTime.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["StartTime"])]);
-                    EndTime.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["EndTime"])]);
-                    OrderStatus.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["SystemStatus"])]);
-
+                    Encoding = Encoding.UTF8, // Our file uses UTF-8 encoding.
+                    Delimiter = lineCSV[0].Contains(';') ? ";" : ","
+                };
+                using (var reader = new StreamReader(FileName))
+                using (var csv = new CsvReader(reader, configuration))
+                {
+                    var records = csv.GetRecords<OrderFormat>();
+                    foreach (var data in records)
+                    {
+                        //Console.WriteLine($"{data.WorkCenter} - {data.Order} - {data.Material} - {data.OrderType} - {data.TargetQty} - {data.StartTime} - {data.EndTime}");
+                        MfgLine.Add(data.WorkCenter);
+                        MfgOrder.Add(data.Order.TrimStart('0'));
+                        Product.Add(data.Material.TrimStart('0'));
+                        OrderType.Add(data.OrderType);
+                        Qty.Add(data.TargetQty);
+                        StartTime.Add(data.StartTime);
+                        EndTime.Add(data.EndTime);
+                        OrderStatus.Add(data.SystemStatus);
+                    }
                 }
+
                 ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
                 for (int i = 0; i < lineCSV.Length - 1; i++)
                 {
@@ -207,7 +220,6 @@ namespace ExCoreServiceOrder
                     if (ConvertToDoubleCommaDecimal(Qty[i], out number))
                     {
                         bool result = false;
-                        //Console.WriteLine($"{i}. - {MfgOrder[i]} - {Product[i]} - {number} - { StartTime[i]} - {EndTime[i]} - {OrderStatus[i]} - {OrderType[i]} - {MfgLine[i]}");
 
                         // Validation or Filtering Data
                         string sMfgLineChecked = "";
@@ -274,7 +286,7 @@ namespace ExCoreServiceOrder
                         if (sOrderStatusChecked != "") oServiceUtil.SaveOrderStatus(sOrderStatusChecked, isOrderStateEnum.Open);
                         if (sOrderTypeChecked != "") oServiceUtil.SaveOrderType(sOrderTypeChecked);
                         if (sMfgLineChecked != "") oServiceUtil.SaveMfgLine(sMfgLineChecked);
-                        if (oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Product[i], ""))
+                        if (oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Product[i], "") && MfgOrder[i] != "")
                         {
                             Console.WriteLine($"{i}. - {MfgOrder[i]} - {Product[i]} - {number} - { StartTime[i]} - {EndTime[i]} - {OrderStatus[i]} - {OrderType[i]} - {MfgLine[i]}");
                             result = oServiceUtil.SaveMfgOrder(MfgOrder[i],

@@ -10,6 +10,8 @@ using Camstar.WCF.Services;
 using OpcenterWikLibrary;
 using System.Configuration;
 using System.Globalization;
+using CsvHelper.Configuration;
+using CsvHelper;
 
 namespace ExCoreServiceOrderBOM
 {
@@ -189,7 +191,7 @@ namespace ExCoreServiceOrderBOM
             {
                 ProductTypeMaintService oServiceProduct = new ProductTypeMaintService(AppSettings.ExCoreUserProfile);
                 bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductTypeMaint(), DefaultProductType);
-                if (!ObjectExists) oServiceUtil.SaveProductType(DefaultProductType);
+                if (!ObjectExists && DefaultProductType != "") oServiceUtil.SaveProductType(DefaultProductType);
             }
             catch (Exception ex)
             {
@@ -207,14 +209,25 @@ namespace ExCoreServiceOrderBOM
                     return false;
                 }
 
-                for (int i = 1; i < lineCSV.Length; i++)
+                //Read Csv line
+                var configuration = new CsvConfiguration(CultureInfo.InvariantCulture)
                 {
-                    string[] rowData = SmartSplit(lineCSV[i], ',');
-                    ProductionOrder.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["PO"])].TrimStart('0'));
-                    Scanning.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Scanning"])]);
-                    MaterialGroup.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["MaterialGroup"])]);
-                    Material.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Material"])]);
-                    Qty.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Qty"])]);
+                    Encoding = Encoding.UTF8, // Our file uses UTF-8 encoding.
+                    Delimiter = lineCSV[0].Contains(';') ? ";" : ","
+                };
+                using (var reader = new StreamReader(FileName))
+                using (var csv = new CsvReader(reader, configuration))
+                {
+                    var records = csv.GetRecords<OrderBOMFormat>();
+                    foreach (var data in records)
+                    {
+                        //Console.WriteLine($"{data.ProductionOrder.TrimStart('0')} - {data.Scanning} - {data.MaterialGroup} - {data.Material} - {data.Qty}");
+                        ProductionOrder.Add(data.ProductionOrder.TrimStart('0'));
+                        Scanning.Add(data.Scanning);
+                        MaterialGroup.Add(data.MaterialGroup);
+                        Material.Add(data.Material.TrimStart('0'));
+                        Qty.Add(data.Qty);
+                    }
                 }
 
                 NamedObjectRef[] getMfgOrderList = oServiceUtil.GetListMfgOrder();
@@ -233,6 +246,7 @@ namespace ExCoreServiceOrderBOM
                         EventLogUtil.LogEvent($"Production or Manufacturing Order: {oMfgOrder} is not found!", System.Diagnostics.EventLogEntryType.Warning, 3);
                     }
                 }
+
                 foreach (var oMfgOrder in oMfgOrders)
                 {
                     Console.WriteLine($"Still in Processs !!!!!! {oMfgOrder.Name}");
@@ -266,7 +280,7 @@ namespace ExCoreServiceOrderBOM
                         }
                         ProductMaintService oServiceProduct = new ProductMaintService(AppSettings.ExCoreUserProfile);
                         bool ObjectExists = oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Material[j], "");
-                        if (!ObjectExists)
+                        if (!ObjectExists && MaterialGroup[j] != "" && Material[j] != "")
                         {
                             oServiceUtil.SaveProductFamily(MaterialGroup[j]);
                             oServiceUtil.SaveProduct(Material[j], "1", "", DefaultProductDesc, "", DefaultProductType, "", "", "", "", "", MaterialGroup[j]);
@@ -280,7 +294,7 @@ namespace ExCoreServiceOrderBOM
                                 if (routeStep.Sequence.Value == OperationNumber && routeStep.Name != null)
                                 {
                                     cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(Material[j]), QtyRequired = number / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value), wikScanning = new Primitive<string>() { Value = Scanning[j] }});
-                                    Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber} | {Material[j]} | {number}");
+                                    Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber} | {Material[j]} | {number / oMfgOrder.Qty.Value}");
                                 }
                             }
                         }

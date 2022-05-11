@@ -10,6 +10,8 @@ using Camstar.WCF.Services;
 using OpcenterWikLibrary;
 using System.Configuration;
 using System.Globalization;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace ExCoreServiceProductMaster
 {
@@ -200,17 +202,28 @@ namespace ExCoreServiceProductMaster
                     return false;
                 }
 
-                for (int i = 1; i < lineCSV.Length; i++)
+                //Read Csv line
+                var configuration = new CsvConfiguration(CultureInfo.InvariantCulture)
                 {
-                    string[] rowData = lineCSV[i].Split(',');
-                    Product.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Product"])]);
-                    Description.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Description"])]);
-                    Procurement.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Procurement"])]);
-                    UOM.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["UOM"])]);
-                    ProductType.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["ProductType"])]);
-                    ProductFamily.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["ProductFamily"])]);
-                    ProductFamilyDescription.Add(rowData[Convert.ToInt32(ConfigurationManager.AppSettings["ProductFamilyDescription"])]);
-                    ProductFamilyInstance.Add( new ProductFamilyInstance { Name = rowData[Convert.ToInt32(ConfigurationManager.AppSettings["ProductFamily"])], Description = rowData[Convert.ToInt32(ConfigurationManager.AppSettings["Description"])] });
+                    Encoding = Encoding.UTF8, // Our file uses UTF-8 encoding.
+                    Delimiter = lineCSV[0].Contains(';') ? ";" : ","
+                };
+                using (var reader = new StreamReader(FileName))
+                using (var csv = new CsvReader(reader, configuration))
+                {
+                    var records = csv.GetRecords<ProductFormat>();
+                    foreach (var data in records)
+                    {
+                        //Console.WriteLine($"{data.Product} - {data.Description} - {data.Procurement} - {data.UOM} - {data.ProductType} - {data.ProductFamily} - {data.ProductFamilyDescription}");
+                        Product.Add(data.Product.TrimStart('0'));
+                        Description.Add(data.Description);
+                        Procurement.Add(data.Procurement);
+                        UOM.Add(data.UOM);
+                        ProductType.Add(data.ProductType);
+                        ProductFamily.Add(data.ProductFamily);
+                        ProductFamilyDescription.Add(data.ProductType);
+                        ProductFamilyInstance.Add(new ProductFamilyInstance { Name = data.ProductFamily, Description = data.ProductFamilyDescription });
+                    }
                 }
 
                 string[] createUOM = UOM.Distinct().Where(x => !string.IsNullOrEmpty(x)).ToArray();
@@ -231,14 +244,17 @@ namespace ExCoreServiceProductMaster
                 foreach (var sProductFamily in createProductFamily)
                 {
                     Console.WriteLine($"Create Product Family {sProductFamily.Name}");
-                    oServiceUtil.SaveProductType(sProductFamily.Name, sProductFamily.Description);
+                    oServiceUtil.SaveProductFamily(sProductFamily.Name, sProductFamily.Description);
                 }
 
                 for (int j = 0; j < lineCSV.Length - 1; j++)
                 {
                     Console.WriteLine($"{Product[j]} - {Description[j]} - {Procurement[j]} - {UOM[j]} - {ProductType[j]} - {ProductFamily[j]}");
-                    result = oServiceUtil.SaveProduct(Product[j], "1", "", Description[j], "", ProductType[j], "", "", "", "", "",ProductFamily[j] , Procurement[j], UOM[j], 1);
-                    if (!result) break;
+                    if (Product[j] != "")
+                    {
+                        result = oServiceUtil.SaveProduct(Product[j], "1", "", Description[j], "", ProductType[j], "", "", "", "", "", ProductFamily[j], Procurement[j], UOM[j], 1);
+                        if (!result) break;
+                    }
                 }
                 return result;
             }
