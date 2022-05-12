@@ -52,6 +52,7 @@ Where's the path Installer File of ExCoreServiceOrder: C:\Users\zul\source\repos
 Where's the path Installer File of ExCoreServiceOrderBOM: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceOrderBOM\bin\Release
 Where's the path Installer File of ExCoreServiceProductMaster: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceProductMaster\bin\Release
 ```
+Or you can directly find the `InstallService.cmd` in folder ExCoreServiceProductMaster\bin\Release, after you compiled this project.
 # How uninstall the service
 Run as Administrator the file `UninstallServices.cmd`. And Copy the folder path for each Services 1 by 1 per service, for example:
 for example:
@@ -60,6 +61,7 @@ Where's the path Installer File of ExCoreServiceOrder: C:\Users\zul\source\repos
 Where's the path Installer File of ExCoreServiceOrderBOM: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceOrderBOM\bin\Release
 Where's the path Installer File of ExCoreServiceProductMaster: C:\Users\zul\source\repos\ExCoreService\ExCoreServiceProductMaster\bin\Release
 ```
+Or you can directly find the `UninstallService.cmd` in folder ExCoreServiceProductMaster\bin\Release, after you compiled this project.
 # Released Notes
 - [v1.0.1](https://github.com/zulfikar4568/ExCoreService/releases/tag/v1.0.1) Import Order BOM (Material List) and Order (Production Order)
 - [v1.0.2](https://github.com/zulfikar4568/ExCoreService/releases/tag/v1.0.2) Fixing Bug (Order BOM import Error When Route Steps Sequence is null)
