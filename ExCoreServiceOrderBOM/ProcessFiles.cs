@@ -293,8 +293,8 @@ namespace ExCoreServiceOrderBOM
                                 if (routeStep.Sequence == null) continue;
                                 if (routeStep.Sequence.Value == OperationNumber && routeStep.Name != null)
                                 {
-                                    cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(Material[j]), QtyRequired = number / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.NoTracking, RouteStep = new NamedSubentityRef(routeStep.Name.Value), wikScanning = new Primitive<string>() { Value = Scanning[j] }});
-                                    Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber} | {Material[j]} | {number / oMfgOrder.Qty.Value}");
+                                    cMaterialList.Add(new MfgOrderMaterialListItmChanges() { Product = new RevisionedObjectRef(Material[j]), QtyRequired = number / oMfgOrder.Qty.Value, IssueControl = IssueControlEnum.LotAndStockPoint, RouteStep = new NamedSubentityRef(routeStep.Name.Value), wikScanning = new Primitive<string>() { Value = Scanning[j] }});
+                                    // Console.WriteLine($"{j} | {ProductionOrder[j]} | {OperationNumber} | {Material[j]} | {number / oMfgOrder.Qty.Value}");
                                 }
                             }
                         }
