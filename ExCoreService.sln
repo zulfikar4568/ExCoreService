@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExCoreServiceProductMaster"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExCoreServiceOrderBOM", "ExCoreServiceOrderBOM\ExCoreServiceOrderBOM.csproj", "{715D8518-15A9-4976-9C81-4B2B46D34D23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExCoreServiceRework", "ExCoreServiceRework\ExCoreServiceRework.csproj", "{CCA5CEF9-B8DC-43E7-85A2-6E74A31E745C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{715D8518-15A9-4976-9C81-4B2B46D34D23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{715D8518-15A9-4976-9C81-4B2B46D34D23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{715D8518-15A9-4976-9C81-4B2B46D34D23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CCA5CEF9-B8DC-43E7-85A2-6E74A31E745C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCA5CEF9-B8DC-43E7-85A2-6E74A31E745C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCA5CEF9-B8DC-43E7-85A2-6E74A31E745C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCA5CEF9-B8DC-43E7-85A2-6E74A31E745C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
