@@ -126,13 +126,6 @@ namespace ExCoreServiceRework
                 EventLogUtil.LogErrorEvent(AppSettings.AssemblyName == ex.Source ? MethodBase.GetCurrentMethod().Name : MethodBase.GetCurrentMethod().Name + "." + ex.Source, ex);
             }
         }
-        private bool ConvertToDoubleCommaDecimal(string value, out double result)
-        {
-            CultureInfo provider = new CultureInfo("en-US");
-            NumberStyles styles = NumberStyles.Integer | NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands;
-            bool status = double.TryParse(value, styles, provider, out result);
-            return status;
-        }
         private string[] SmartSplit(string line, char separator = ',')
         {
             if (line.Contains(';')) separator = ';';
@@ -177,7 +170,7 @@ namespace ExCoreServiceRework
             bool result = false;
             var PORework = new List<string>();
             var Container = new List<string>();
-
+            string LastPORework = "";
             try
             {
 
@@ -209,36 +202,30 @@ namespace ExCoreServiceRework
                     }
                 }
 
-                /*string[] createUOM = UOM.Distinct().Where(x => !string.IsNullOrEmpty(x)).ToArray();
-                foreach (var sUOM in createUOM)
-                {
-                    Console.WriteLine($"Create UOM {sUOM}");
-                    oServiceUtil.SaveUOM(sUOM);
-                }
-
-                string[] createProductType = ProductType.Distinct().Where(x => !string.IsNullOrEmpty(x)).ToArray();
-                foreach (var sProductType in createProductType)
-                {
-                    Console.WriteLine($"Create ProductType {sProductType}");
-                    oServiceUtil.SaveProductType(sProductType);
-                }
-
-                ProductFamilyInstance[] createProductFamily = ProductFamilyInstance.GroupBy(p => p.Name).Select(g => g.First()).ToArray();
-                foreach (var sProductFamily in createProductFamily)
-                {
-                    Console.WriteLine($"Create Product Family {sProductFamily.Name}");
-                    oServiceUtil.SaveProductFamily(sProductFamily.Name, sProductFamily.Description);
-                }
-
                 for (int j = 0; j < lineCSV.Length - 1; j++)
                 {
-                    Console.WriteLine($"{Product[j]} - {Description[j]} - {Procurement[j]} - {UOM[j]} - {ProductType[j]} - {ProductFamily[j]}");
-                    if (Product[j] != "")
+                    if (LastPORework != PORework[j])
                     {
-                        result = oServiceUtil.SaveProduct(Product[j], "1", "", Description[j], "", ProductType[j], "", "", "", "", "", ProductFamily[j], Procurement[j], UOM[j], 1);
-                        if (!result) break;
+                        MfgOrderChanges bResult = oServiceUtil.GetMfgOrder(PORework[j]);
+                        if (bResult == null)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            LastPORework = PORework[j];
+                        }
                     }
-                }*/
+                    bool bContainerExists = oServiceUtil.ContainerExists(Container[j]);
+                    if (!bContainerExists)
+                    {
+                        EventLogUtil.LogEvent($"Container: {Container[j]} doesn't exists!", System.Diagnostics.EventLogEntryType.Warning, 3);
+                        continue;
+                    }
+                    ContainerMaintDetail oMaintDetail = new ContainerMaintDetail() { MfgOrder = new NamedObjectRef(LastPORework) };
+                    result = oServiceUtil.ExecuteContainerMaintenance(Container[j], oMaintDetail);
+                    if (!result) break;
+                }
                 return result;
             }
             catch (Exception ex)
