@@ -175,9 +175,18 @@ namespace ExCoreServiceOrder
             var EndTime = new List<string>();
             var OrderStatus = new List<string>();
 
-            string[] FilterMfgLines = ConfigurationManager.AppSettings["FilterWorkCenter"].Split(',');
+
             string[] FilterOrderTypes = ConfigurationManager.AppSettings["FilterOrderType"].Split(',');
-            string[] FilterOrderStatus = ConfigurationManager.AppSettings["FilterSystemStatus"].Split(',');
+            HashSet<string> FilterMfgLines = new HashSet<string>();
+            HashSet<string> FilterOrderStatus = new HashSet<string>();
+            foreach (var item in ConfigurationManager.AppSettings["FilterWorkCenter"].Split(','))
+            {
+                FilterMfgLines.Add(item);
+            }
+            foreach (var item in ConfigurationManager.AppSettings["FilterSystemStatus"].Split(','))
+            {
+                FilterOrderStatus.Add(item);
+            }
 
             try
             {
@@ -222,40 +231,24 @@ namespace ExCoreServiceOrder
                         bool result = false;
 
                         // Validation or Filtering Data
-                        string sMfgLineChecked = "";
-                        string sOrderTypeChecked = "";
                         string sOrderStatusChecked = "";
+
+                        string sOrderTypeChecked = "";
                         int countOrderStatus = 0;
-                        
+
                         if (FilterOrderTypes.Length > 0)
                         {
                             foreach (var item in FilterOrderTypes)
                             {
                                 if (OrderType[i].Contains(item))
                                 {
-                                    sOrderTypeChecked = OrderType[i]; 
+                                    sOrderTypeChecked = OrderType[i];
                                     break;
                                 }
                             }
                         }
-                        if (sOrderTypeChecked == "")
-                        {
-                            EventLogUtil.LogEvent($"{MfgOrder[i]} OrderType {OrderType[i]} skipped, cause there's not on the filter list!", System.Diagnostics.EventLogEntryType.Warning, 3);
-                            continue;
-                        }
-                        
-                        if (FilterMfgLines.Length > 0)
-                        {
-                            foreach (var item in FilterMfgLines)
-                            {
-                                if (MfgLine[i].Contains(item))
-                                {
-                                    sMfgLineChecked = MfgLine[i]; 
-                                    break;
-                                }
-                            }
-                        }
-                        if (sMfgLineChecked == "")
+
+                        if (!FilterMfgLines.Contains(MfgLine[i]))
                         {
                             EventLogUtil.LogEvent($"{MfgOrder[i]} MfgLine or WorkCenter {MfgLine[i]} skipped, cause there's not on the filter list!", System.Diagnostics.EventLogEntryType.Warning, 3);
                             continue;
@@ -267,28 +260,25 @@ namespace ExCoreServiceOrder
                         {
                             foreach (var itemActual in OrderStatusArray)
                             {
-                                foreach (var itemConfig in FilterOrderStatus)
+                                if (FilterOrderStatus.Contains(itemActual))
                                 {
-                                    if (itemActual == itemConfig)
-                                    {
-                                        sOrderStatusChecked = itemActual;
-                                        countOrderStatus++;
-                                    }
+                                    sOrderStatusChecked = itemActual;
+                                    countOrderStatus++;
                                 }
                             }
                         }
+                        // If theres more System Status or null, will skipped, the value counter must be 1
                         if (countOrderStatus != 1)
                         {
                             EventLogUtil.LogEvent($"{MfgOrder[i]} SystemStatus skipped, cause there's no on the filter list or container more than on the list!", System.Diagnostics.EventLogEntryType.Warning, 3);
                             continue;
                         }
-                        Console.WriteLine($"{i}. - {MfgOrder[i]} - {Product[i]} - {number} - {StartTime[i]} - {EndTime[i]} - {sOrderStatusChecked} - {sOrderTypeChecked} - {sMfgLineChecked}");
                         if (sOrderStatusChecked != "") oServiceUtil.SaveOrderStatus(sOrderStatusChecked, isOrderStateEnum.Open);
                         if (sOrderTypeChecked != "") oServiceUtil.SaveOrderType(sOrderTypeChecked);
-                        if (sMfgLineChecked != "") oServiceUtil.SaveMfgLine(sMfgLineChecked);
+                        if (MfgLine[i] != "") oServiceUtil.SaveMfgLine(MfgLine[i]);
                         if (oServiceUtil.ObjectExists(oServiceProduct, new ProductMaint(), Product[i], "") && MfgOrder[i] != "")
                         {
-                            Console.WriteLine($"{i}. - {MfgOrder[i]} - {Product[i]} - {number} - { StartTime[i]} - {EndTime[i]} - {OrderStatus[i]} - {OrderType[i]} - {MfgLine[i]}");
+                            //Console.WriteLine($"{i}. - {MfgOrder[i]} - {Product[i]} - {number} - { StartTime[i]} - {EndTime[i]} - {OrderStatus[i]} - {OrderType[i]} - {MfgLine[i]} - {sOrderStatusChecked}");
                             result = oServiceUtil.SaveMfgOrder(MfgOrder[i],
                                 "",
                                 "",
@@ -305,7 +295,7 @@ namespace ExCoreServiceOrder
                                 sOrderStatusChecked,
                                 null,
                                 sOrderTypeChecked,
-                                sMfgLineChecked,
+                                MfgLine[i],
                                 false);
                             if (!result)
                             {

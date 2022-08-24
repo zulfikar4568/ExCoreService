@@ -238,7 +238,7 @@ namespace ExCoreServiceOrderBOM
                     MfgOrderChanges getMfgOrder = oServiceUtil.GetMfgOrder(oMfgOrder);
                     if (getMfgOrder != null)
                     {
-                        Console.WriteLine($"Ada {getMfgOrder.Name}");
+                        //Console.WriteLine($"Ada {getMfgOrder.Name}");
                         oMfgOrders.Add(getMfgOrder);
                     }
                     else
@@ -249,7 +249,7 @@ namespace ExCoreServiceOrderBOM
 
                 foreach (var oMfgOrder in oMfgOrders)
                 {
-                    Console.WriteLine($"Still in Processs !!!!!! {oMfgOrder.Name}");
+                    //Console.WriteLine($"Still in Processs !!!!!! {oMfgOrder.Name}");
                     ERPRouteChanges oERPRoute = oServiceUtil.GetERPRouteFromMfgOrder(oMfgOrder);
                     if (oERPRoute == null) continue;
                     if (oMfgOrder.Qty == null && oMfgOrder.Containers != null)
