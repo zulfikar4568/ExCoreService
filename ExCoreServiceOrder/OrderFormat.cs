@@ -15,15 +15,15 @@ namespace ExCoreServiceOrder
         public string Order { get; set; }
         [Index(2)]
         public string Material { get; set; }
-        [Index(4)]
+        [Index(5)]
         public string OrderType { get; set; }
-        [Index(7)]
+        [Index(8)]
         public string TargetQty { get; set; }
-        [Index(11)]
-        public string StartTime { get; set; }
-        [Index(12)]
-        public string EndTime { get; set; }
         [Index(13)]
+        public string StartTime { get; set; }
+        [Index(14)]
+        public string EndTime { get; set; }
+        [Index(15)]
         public string SystemStatus { get; set; }
     }
 }
